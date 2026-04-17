@@ -5,6 +5,7 @@ import Konva from "konva";
 import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
 
 type ShapeType = "circle" | "square" | "triangle" | "trapezoid" | "parallelogram" | "diamond";
+type StageMode = "free" | "quiz";
 
 type ShapeItem = {
   id: string;
@@ -110,12 +111,17 @@ const isNearSlotPosition = (shape: ShapeItem, setting: QuestionSetting) => {
   return distance <= setting.snapDistance;
 };
 
-export default function ShapeStage() {
+type ShapeStageProps = {
+  mode: StageMode;
+};
+
+export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [isAllSolved, setIsAllSolved] = useState(false);
   const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
+  const isQuizMode = mode === "quiz";
   const currentQuestion = QUESTION_SETTINGS[questionIndex];
 
   const animateDragging = (target: Konva.Shape, active: boolean) => {
@@ -256,7 +262,7 @@ export default function ShapeStage() {
   };
 
   const rotateShapeById = (id: string) => {
-    if (judgeResult === "wrong") setJudgeResult("idle");
+    if (isQuizMode && judgeResult === "wrong") setJudgeResult("idle");
 
     setShapes((currentShapes) =>
       currentShapes.map((shape) => {
@@ -267,14 +273,14 @@ export default function ShapeStage() {
   };
 
   const handleDragEndById = (id: string, x: number, y: number) => {
-    if (judgeResult === "wrong") setJudgeResult("idle");
+    if (isQuizMode && judgeResult === "wrong") setJudgeResult("idle");
 
     setShapes((currentShapes) =>
       currentShapes.map((shape) => {
         if (shape.id !== id || shape.isLocked) return shape;
         const movedShape = { ...shape, x, y };
 
-        if (isNearSlotPosition(movedShape, currentQuestion)) {
+        if (isQuizMode && isNearSlotPosition(movedShape, currentQuestion)) {
           return {
             ...movedShape,
             x: currentQuestion.target.x,
@@ -288,6 +294,7 @@ export default function ShapeStage() {
   };
 
   const judgeByOkButton = () => {
+    if (!isQuizMode) return;
     if (isAllSolved) return;
 
     const matchedShape = shapes.find((shape) => !shape.isLocked && isCloseToSlot(shape, currentQuestion));
@@ -325,6 +332,13 @@ export default function ShapeStage() {
     }, 700);
   };
 
+  const clearScreen = () => {
+    setShapes([]);
+    if (isQuizMode && !isAllSolved) {
+      setJudgeResult("idle");
+    }
+  };
+
   return (
     <div style={{ display: "grid", gap: "12px" }}>
       <div
@@ -337,9 +351,11 @@ export default function ShapeStage() {
           background: "#f4f6ff"
         }}
       >
-        <span style={{ fontWeight: 700, color: "#44506b", minWidth: "68px" }}>
-          {`第${questionIndex + 1}問`}
-        </span>
+        {isQuizMode && (
+          <span style={{ fontWeight: 700, color: "#44506b", minWidth: "68px" }}>
+            {`第${questionIndex + 1}問`}
+          </span>
+        )}
         {PALETTE_SHAPES.map((type) => (
           <button
             key={type}
@@ -368,41 +384,41 @@ export default function ShapeStage() {
         ))}
         <button
           type="button"
-          onClick={judgeByOkButton}
-          disabled={judgeResult === "correct" || isAllSolved}
+          onClick={clearScreen}
           style={{
-            marginLeft: "auto",
-            border: "none",
-            background: judgeResult === "correct" || isAllSolved ? "#a9b2d1" : "#3853ff",
-            color: "#ffffff",
+            border: "1px solid #c6cce0",
+            background: "#ffffff",
+            color: "#36405f",
             borderRadius: "10px",
-            padding: "10px 16px",
+            padding: "10px 12px",
             fontWeight: 700,
-            cursor: judgeResult === "correct" || isAllSolved ? "default" : "pointer"
+            cursor: "pointer"
           }}
         >
-          OK
+          画面をクリア
         </button>
       </div>
       <p
         style={{
           margin: 0,
           minHeight: "1.6em",
-          color: judgeResult === "correct" ? "#2f9e44" : judgeResult === "wrong" ? "#cc3344" : "#44506b",
+          color: !isQuizMode ? "#44506b" : judgeResult === "correct" ? "#2f9e44" : judgeResult === "wrong" ? "#cc3344" : "#44506b",
           fontWeight: 700
         }}
       >
-        {isAllSolved
-          ? "5問クリア！ぜんぶせいかい！すごい 🎊"
-          : judgeResult === "correct"
-          ? "せいかい！ ぴったりはまったね 🎉"
-          : judgeResult === "wrong"
-            ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
-            : `くぼみに合う形を置いて、OKを押して判定しよう（難易度 ${questionIndex + 1}/5）`}
+        {!isQuizMode
+          ? "好きな形を置いて、ドラッグや回転で自由に遊ぼう"
+          : isAllSolved
+            ? "5問クリア！ぜんぶせいかい！すごい 🎊"
+            : judgeResult === "correct"
+              ? "せいかい！ ぴったりはまったね 🎉"
+              : judgeResult === "wrong"
+                ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
+                : `くぼみに合う形を置いて、OKを押して判定しよう（難易度 ${questionIndex + 1}/5）`}
       </p>
       <Stage width={900} height={500}>
         <Layer>
-          {renderTargetSlot(currentQuestion.target)}
+          {isQuizMode && renderTargetSlot(currentQuestion.target)}
           {shapes.map((shape) => {
             if (shape.type === "circle") {
               return (
@@ -587,6 +603,27 @@ export default function ShapeStage() {
           })}
         </Layer>
       </Stage>
+      {isQuizMode && (
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <button
+            type="button"
+            onClick={judgeByOkButton}
+            disabled={judgeResult === "correct" || isAllSolved}
+            style={{
+              border: "none",
+              background: judgeResult === "correct" || isAllSolved ? "#a9b2d1" : "#3853ff",
+              color: "#ffffff",
+              borderRadius: "12px",
+              padding: "12px 26px",
+              fontWeight: 700,
+              fontSize: "1rem",
+              cursor: judgeResult === "correct" || isAllSolved ? "default" : "pointer"
+            }}
+          >
+            OK
+          </button>
+        </div>
+      )}
     </div>
   );
 }
