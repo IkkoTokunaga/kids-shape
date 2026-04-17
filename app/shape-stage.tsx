@@ -320,6 +320,64 @@ type ShapeStageProps = {
 const BASE_STAGE_WIDTH = 900;
 const BASE_STAGE_HEIGHT = 500;
 const NEXT_QUESTION_DELAY_MS = 1300;
+const EDGE_SAFE_PADDING = 10;
+const DRAG_VISUAL_MARGIN = 22;
+const TRIANGLE_POINTS: [number, number][] = [
+  [0, -75],
+  [64.95, 37.5],
+  [-64.95, 37.5]
+];
+const SQUARE_POINTS: [number, number][] = [
+  [-60, -60],
+  [60, -60],
+  [60, 60],
+  [-60, 60]
+];
+const TRAPEZOID_POINTS: [number, number][] = [
+  [-60, 48],
+  [60, 48],
+  [36, -48],
+  [-36, -48]
+];
+const PARALLELOGRAM_POINTS: [number, number][] = [
+  [-45, -48],
+  [75, -48],
+  [45, 48],
+  [-75, 48]
+];
+const DIAMOND_POINTS: [number, number][] = [
+  [0, -66],
+  [58, 0],
+  [0, 66],
+  [-58, 0]
+];
+
+const getRotatedHalfExtents = (points: [number, number][], rotation: number) => {
+  const angle = (rotation * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  let maxAbsX = 0;
+  let maxAbsY = 0;
+
+  points.forEach(([x, y]) => {
+    const rotatedX = x * cos - y * sin;
+    const rotatedY = x * sin + y * cos;
+    maxAbsX = Math.max(maxAbsX, Math.abs(rotatedX));
+    maxAbsY = Math.max(maxAbsY, Math.abs(rotatedY));
+  });
+
+  return { halfWidth: maxAbsX, halfHeight: maxAbsY };
+};
+
+const getShapeHalfExtents = (type: ShapeType, rotation: number) => {
+  if (type === "circle") return { halfWidth: 60, halfHeight: 60 };
+  if (type === "square") return getRotatedHalfExtents(SQUARE_POINTS, rotation);
+  if (type === "triangle") return getRotatedHalfExtents(TRIANGLE_POINTS, rotation);
+  if (type === "trapezoid") return getRotatedHalfExtents(TRAPEZOID_POINTS, rotation);
+  if (type === "parallelogram") return getRotatedHalfExtents(PARALLELOGRAM_POINTS, rotation);
+  return getRotatedHalfExtents(DIAMOND_POINTS, rotation);
+};
 
 export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
@@ -329,9 +387,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [matchedTargetIndices, setMatchedTargetIndices] = useState<number[]>([]);
   const [isAllSolved, setIsAllSolved] = useState(false);
   const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
-  const [viewportSize, setViewportSize] = useState({ width: 1280, height: 720 });
   const [celebrationLevel, setCelebrationLevel] = useState<0 | 1 | 2>(0);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
+  const stageHostRef = useRef<HTMLDivElement | null>(null);
+  const [stageHostWidth, setStageHostWidth] = useState(BASE_STAGE_WIDTH);
+  const [viewportHeight, setViewportHeight] = useState(800);
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const isQuizMode = mode !== "free";
@@ -346,20 +406,50 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const currentQuestion = questionSettings[questionIndex];
 
   const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
-  const availableWidth = Math.max(360, viewportSize.width - 80);
-  const availableHeight = Math.max(220, viewportSize.height - 360);
-  const stageScale = Math.min(1, availableWidth / BASE_STAGE_WIDTH, availableHeight / BASE_STAGE_HEIGHT);
-  const scaledStageWidth = Math.round(BASE_STAGE_WIDTH * stageScale);
-  const scaledStageHeight = Math.round(BASE_STAGE_HEIGHT * stageScale);
+  const visualStageWidth = Math.max(360, stageHostWidth);
+  const reservedHeight = isQuizMode ? 360 : 320;
+  const maxStageVisualHeight = Math.max(220, viewportHeight - reservedHeight);
+  const stageScale = Math.min(1, maxStageVisualHeight / BASE_STAGE_HEIGHT);
+  const internalStageWidth = Math.max(
+    BASE_STAGE_WIDTH,
+    Math.ceil(visualStageWidth / Math.max(stageScale, 0.01))
+  );
+  const scaledStageWidth = Math.ceil(visualStageWidth);
+  const scaledStageHeight = Math.ceil(BASE_STAGE_HEIGHT * stageScale);
+  const visibleInternalWidth = scaledStageWidth / Math.max(stageScale, 0.01);
+  const visibleInternalHeight = scaledStageHeight / Math.max(stageScale, 0.01);
+  const boundedStageWidth = Math.min(internalStageWidth, visibleInternalWidth);
+  const boundedStageHeight = Math.min(BASE_STAGE_HEIGHT, visibleInternalHeight);
+  const visualSafeMargin = EDGE_SAFE_PADDING + DRAG_VISUAL_MARGIN;
+  const dragExtraMargin = Math.ceil(visualSafeMargin / Math.max(stageScale, 0.01));
 
   useEffect(() => {
-    const updateViewportSize = () => {
-      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    if (!stageHostRef.current) return;
+
+    const updateHostWidth = () => {
+      if (!stageHostRef.current) return;
+      setStageHostWidth(Math.max(360, Math.floor(stageHostRef.current.clientWidth)));
     };
 
-    updateViewportSize();
-    window.addEventListener("resize", updateViewportSize);
-    return () => window.removeEventListener("resize", updateViewportSize);
+    updateHostWidth();
+    const observer = new ResizeObserver(updateHostWidth);
+    observer.observe(stageHostRef.current);
+    window.addEventListener("resize", updateHostWidth);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateHostWidth);
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      setViewportHeight(window.innerHeight);
+    };
+
+    updateViewportHeight();
+    window.addEventListener("resize", updateViewportHeight);
+    return () => window.removeEventListener("resize", updateViewportHeight);
   }, []);
 
   useEffect(() => {
@@ -460,6 +550,19 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       shadowOpacity: active ? 0.45 : 0,
       duration: 0.2
     });
+  };
+
+  const getDragBoundPosition = (shape: ShapeItem, pos: { x: number; y: number }) => {
+    const { halfWidth, halfHeight } = getShapeHalfExtents(shape.type, shape.rotation);
+    const minX = halfWidth + dragExtraMargin;
+    const maxX = boundedStageWidth - halfWidth - dragExtraMargin;
+    const minY = halfHeight + dragExtraMargin;
+    const maxY = boundedStageHeight - halfHeight - dragExtraMargin;
+
+    return {
+      x: Math.min(maxX, Math.max(minX, pos.x)),
+      y: Math.min(maxY, Math.max(minY, pos.y))
+    };
   };
 
   const addShape = (type: ShapeType, color: string) => {
@@ -816,7 +919,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
                 : `くぼみに合う形を置いて、OKを押して判定しよう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : "難"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
       </p>
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      <div ref={stageHostRef} style={{ display: "flex", justifyContent: "center", width: "100%" }}>
         <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px" }}>
           {showCorrectPopup && (
             <div className="correct-popup" role="status" aria-live="polite">
@@ -847,16 +950,13 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               </div>
             </div>
           )}
-          <div
-            style={{
-              width: BASE_STAGE_WIDTH,
-              height: BASE_STAGE_HEIGHT,
-              transform: `scale(${stageScale})`,
-              transformOrigin: "top left"
-            }}
+          <Stage
+            width={internalStageWidth}
+            height={BASE_STAGE_HEIGHT}
+            scaleX={stageScale}
+            scaleY={stageScale}
           >
-            <Stage width={BASE_STAGE_WIDTH} height={BASE_STAGE_HEIGHT}>
-              <Layer>
+            <Layer>
                 {isQuizMode &&
                   currentQuestion.targets.map((target, idx) =>
                     renderTargetSlot(target, matchedTargetIndices.includes(idx), `target-slot-${idx}`)
@@ -872,6 +972,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   fill={shape.color}
                   draggable={!shape.isLocked}
+                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
@@ -901,6 +1002,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   cornerRadius={10}
                   fill={shape.color}
                   draggable={!shape.isLocked}
+                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
@@ -936,6 +1038,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   fill={shape.color}
                   closed
                   draggable={!shape.isLocked}
+                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
@@ -971,6 +1074,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   fill={shape.color}
                   closed
                   draggable={!shape.isLocked}
+                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
@@ -1006,6 +1110,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   fill={shape.color}
                   closed
                   draggable={!shape.isLocked}
+                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
@@ -1031,6 +1136,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 rotation={shape.rotation}
                 fill={shape.color}
                 draggable={!shape.isLocked}
+                dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                 onDragStart={(e) => {
                   if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                 }}
@@ -1045,9 +1151,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               />
             );
                 })}
-              </Layer>
-            </Stage>
-          </div>
+            </Layer>
+          </Stage>
         </div>
       </div>
       {isQuizMode && (
