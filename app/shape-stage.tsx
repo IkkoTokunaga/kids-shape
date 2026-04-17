@@ -140,7 +140,11 @@ const isCloseToSlot = (shape: ShapeItem, target: TargetSlot, setting: QuestionSe
   return minRotationError <= setting.rotationTolerance;
 };
 
-const findNearestSlot = (shape: ShapeItem, targets: TargetSlot[], setting: QuestionSetting) => {
+const findNearestSlot = (
+  shape: ShapeItem,
+  targets: TargetSlot[],
+  setting: QuestionSetting
+): TargetSlot | null => {
   const rotationError = getMinRotationError(shape.type, shape.rotation);
   if (rotationError > setting.snapRotationTolerance) return null;
 
@@ -150,7 +154,7 @@ const findNearestSlot = (shape: ShapeItem, targets: TargetSlot[], setting: Quest
   let nearest: TargetSlot | null = null;
   let nearestDistance = Number.POSITIVE_INFINITY;
 
-  sameTypeTargets.forEach((target) => {
+  for (const target of sameTypeTargets) {
     const deltaX = shape.x - target.x;
     const deltaY = shape.y - target.y;
     const distance = Math.hypot(deltaX, deltaY);
@@ -159,7 +163,7 @@ const findNearestSlot = (shape: ShapeItem, targets: TargetSlot[], setting: Quest
       nearestDistance = distance;
       nearest = target;
     }
-  });
+  }
 
   if (!nearest || nearestDistance > setting.snapDistance) return null;
   return nearest;
