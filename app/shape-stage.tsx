@@ -202,13 +202,13 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
 
   const animateDragging = (target: Konva.Shape, active: boolean) => {
     target.to({
-      scaleX: active ? 1.15 : 1,
-      scaleY: active ? 1.15 : 1,
+      scaleX: active ? 1.04 : 1,
+      scaleY: active ? 1.04 : 1,
       shadowColor: "rgba(0, 0, 0, 0.35)",
-      shadowBlur: active ? 20 : 0,
-      shadowOffsetX: active ? 8 : 0,
-      shadowOffsetY: active ? 8 : 0,
-      shadowOpacity: active ? 0.7 : 0,
+      shadowBlur: active ? 12 : 0,
+      shadowOffsetX: active ? 4 : 0,
+      shadowOffsetY: active ? 4 : 0,
+      shadowOpacity: active ? 0.45 : 0,
       duration: 0.2
     });
   };
