@@ -118,7 +118,7 @@ const EASY_QUESTION_SETTINGS: QuestionSetting[] = [
 
 const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
   {
-    targets: [{ type: "square", x: 700, y: 250, rotation: 45 }],
+    targets: [{ type: "triangle", x: 700, y: 250, rotation: 180 }],
     snapDistance: 18,
     snapRotationTolerance: 18,
     judgeDistance: 28,
@@ -126,8 +126,8 @@ const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "square", x: 650, y: 220, rotation: 45 },
-      { type: "circle", x: 770, y: 220, rotation: 0 }
+      { type: "triangle", x: 650, y: 220, rotation: 180 },
+      { type: "square", x: 770, y: 220, rotation: 0 }
     ],
     snapDistance: 16,
     snapRotationTolerance: 16,
@@ -136,8 +136,8 @@ const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "triangle", x: 620, y: 230, rotation: 180 },
-      { type: "square", x: 740, y: 230, rotation: 45 },
+      { type: "trapezoid", x: 620, y: 230, rotation: 180 },
+      { type: "triangle", x: 740, y: 230, rotation: 180 },
       { type: "circle", x: 680, y: 340, rotation: 0 }
     ],
     snapDistance: 14,
@@ -149,7 +149,7 @@ const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
     targets: [
       { type: "trapezoid", x: 600, y: 220, rotation: 180 },
       { type: "parallelogram", x: 740, y: 220, rotation: 180 },
-      { type: "diamond", x: 660, y: 330, rotation: 45 },
+      { type: "triangle", x: 660, y: 330, rotation: 180 },
       { type: "circle", x: 800, y: 330, rotation: 0 }
     ],
     snapDistance: 12,
@@ -160,10 +160,10 @@ const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
   {
     targets: [
       { type: "triangle", x: 580, y: 210, rotation: 180 },
-      { type: "square", x: 700, y: 210, rotation: 45 },
+      { type: "trapezoid", x: 700, y: 210, rotation: 180 },
       { type: "circle", x: 820, y: 210, rotation: 0 },
       { type: "parallelogram", x: 640, y: 330, rotation: 180 },
-      { type: "diamond", x: 780, y: 330, rotation: 45 }
+      { type: "triangle", x: 780, y: 330, rotation: 180 }
     ],
     snapDistance: 10,
     snapRotationTolerance: 10,
@@ -176,7 +176,7 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   {
     targets: [
       { type: "triangle", x: 600, y: 220, rotation: 180 },
-      { type: "square", x: 740, y: 220, rotation: 45 },
+      { type: "square", x: 740, y: 220, rotation: 90 },
       { type: "circle", x: 670, y: 340, rotation: 0 }
     ],
     snapDistance: 12,
@@ -188,8 +188,8 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
     targets: [
       { type: "trapezoid", x: 560, y: 210, rotation: 180 },
       { type: "parallelogram", x: 690, y: 210, rotation: 180 },
-      { type: "diamond", x: 820, y: 210, rotation: 45 },
-      { type: "square", x: 620, y: 330, rotation: 45 },
+      { type: "diamond", x: 820, y: 210, rotation: 90 },
+      { type: "square", x: 620, y: 330, rotation: 90 },
       { type: "triangle", x: 760, y: 330, rotation: 180 }
     ],
     snapDistance: 10,
@@ -200,8 +200,8 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   {
     targets: [
       { type: "circle", x: 540, y: 210, rotation: 0 },
-      { type: "square", x: 660, y: 210, rotation: 45 },
-      { type: "diamond", x: 780, y: 210, rotation: 45 },
+      { type: "square", x: 660, y: 210, rotation: 90 },
+      { type: "diamond", x: 780, y: 210, rotation: 90 },
       { type: "triangle", x: 860, y: 210, rotation: 180 },
       { type: "parallelogram", x: 600, y: 330, rotation: 180 },
       { type: "trapezoid", x: 760, y: 330, rotation: 180 }
@@ -214,12 +214,12 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   {
     targets: [
       { type: "triangle", x: 520, y: 200, rotation: 180 },
-      { type: "square", x: 630, y: 200, rotation: 45 },
+      { type: "square", x: 630, y: 200, rotation: 90 },
       { type: "circle", x: 740, y: 200, rotation: 0 },
-      { type: "diamond", x: 850, y: 200, rotation: 45 },
+      { type: "diamond", x: 850, y: 200, rotation: 90 },
       { type: "parallelogram", x: 570, y: 330, rotation: 180 },
       { type: "trapezoid", x: 700, y: 330, rotation: 180 },
-      { type: "square", x: 830, y: 330, rotation: 45 }
+      { type: "square", x: 830, y: 330, rotation: 90 }
     ],
     snapDistance: 8,
     snapRotationTolerance: 8,
@@ -230,11 +230,11 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
     targets: [
       { type: "circle", x: 500, y: 190, rotation: 0 },
       { type: "triangle", x: 600, y: 190, rotation: 180 },
-      { type: "square", x: 700, y: 190, rotation: 45 },
-      { type: "diamond", x: 800, y: 190, rotation: 45 },
+      { type: "square", x: 700, y: 190, rotation: 90 },
+      { type: "diamond", x: 800, y: 190, rotation: 90 },
       { type: "trapezoid", x: 880, y: 190, rotation: 180 },
       { type: "parallelogram", x: 540, y: 320, rotation: 180 },
-      { type: "square", x: 660, y: 320, rotation: 45 },
+      { type: "square", x: 660, y: 320, rotation: 90 },
       { type: "triangle", x: 780, y: 320, rotation: 180 }
     ],
     snapDistance: 7,
@@ -249,23 +249,26 @@ const getNormalizedRotation = (rotation: number) => {
   return normalized < 0 ? normalized + 360 : normalized;
 };
 
-const getEquivalentAngles = (type: ShapeType, rotation: number) => {
-  const normalized = getNormalizedRotation(rotation);
-
-  if (type === "circle") return [0];
-  if (type === "square" || type === "diamond") return [0, 90, 180, 270];
-  if (type === "parallelogram") return [0, 180];
-  return [normalized];
+const getSymmetryStep = (type: ShapeType) => {
+  if (type === "circle") return 360;
+  if (type === "square" || type === "diamond") return 90;
+  if (type === "parallelogram") return 180;
+  return 360;
 };
 
 const getMinRotationError = (type: ShapeType, rotation: number, targetRotation = 0) => {
-  const equivalentAngles = getEquivalentAngles(type, rotation);
+  if (type === "circle") return 0;
+
+  const normalizedRotation = getNormalizedRotation(rotation);
   const normalizedTarget = getNormalizedRotation(targetRotation);
-  return equivalentAngles.reduce((minError, angle) => {
-    const delta = Math.abs(angle - normalizedTarget);
-    const error = Math.min(delta, 360 - delta);
-    return Math.min(minError, error);
-  }, Number.POSITIVE_INFINITY);
+  const rawDelta = Math.abs(normalizedRotation - normalizedTarget);
+  const baseDelta = Math.min(rawDelta, 360 - rawDelta);
+  const symmetryStep = getSymmetryStep(type);
+
+  if (symmetryStep === 360) return baseDelta;
+
+  const mod = baseDelta % symmetryStep;
+  return Math.min(mod, symmetryStep - mod);
 };
 
 const isCloseToSlot = (shape: ShapeItem, target: TargetSlot, setting: QuestionSetting) => {
@@ -542,7 +545,19 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     }
 
     if (target.type === "square") {
-      return <Rect key={key} x={target.x - 60} y={target.y - 60} width={120} height={120} cornerRadius={10} {...sharedProps} />;
+      return (
+        <Rect
+          key={key}
+          x={target.x}
+          y={target.y}
+          width={120}
+          height={120}
+          offsetX={60}
+          offsetY={60}
+          cornerRadius={10}
+          {...sharedProps}
+        />
+      );
     }
 
     if (target.type === "trapezoid") {
@@ -593,7 +608,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setShapes((currentShapes) =>
       currentShapes.map((shape) => {
         if (shape.id !== id || shape.isLocked) return shape;
-        return { ...shape, rotation: shape.rotation + 45 };
+        return { ...shape, rotation: shape.rotation + 90 };
       })
     );
   };
@@ -656,7 +671,13 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         });
         if (!matchedEntry || shape.isLocked) return shape;
 
-        return { ...shape, x: matchedEntry.x, y: matchedEntry.y, rotation: 0, isLocked: true };
+        return {
+          ...shape,
+          x: matchedEntry.x,
+          y: matchedEntry.y,
+          rotation: matchedEntry.rotation ?? 0,
+          isLocked: true
+        };
       })
     );
 
