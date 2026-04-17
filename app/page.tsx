@@ -16,7 +16,7 @@ export default function HomePage() {
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        padding: "16px",
+        padding: "clamp(6px, 2vw, 16px)",
         boxSizing: "border-box",
         overflowX: "hidden"
       }}
@@ -25,9 +25,10 @@ export default function HomePage() {
         style={{
           background: "#ffffff",
           borderRadius: "16px",
-          padding: "20px",
+          padding: "clamp(10px, 2.5vw, 20px)",
           boxShadow: "0 12px 30px rgba(0, 0, 0, 0.08)",
           width: "min(980px, 100%)",
+          maxWidth: "100%",
           boxSizing: "border-box"
         }}
       >

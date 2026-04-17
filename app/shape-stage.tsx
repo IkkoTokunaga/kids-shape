@@ -321,7 +321,6 @@ const BASE_STAGE_WIDTH = 900;
 const BASE_STAGE_HEIGHT = 500;
 const NEXT_QUESTION_DELAY_MS = 1300;
 const EDGE_SAFE_PADDING = 10;
-const DRAG_VISUAL_MARGIN = 22;
 const TRIANGLE_POINTS: [number, number][] = [
   [0, -75],
   [64.95, 37.5],
@@ -390,8 +389,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [celebrationLevel, setCelebrationLevel] = useState<0 | 1 | 2>(0);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
   const stageHostRef = useRef<HTMLDivElement | null>(null);
-  const [stageHostWidth, setStageHostWidth] = useState(BASE_STAGE_WIDTH);
+  const [stageHostWidth, setStageHostWidth] = useState(320);
   const [viewportHeight, setViewportHeight] = useState(800);
+  const [viewportWidth, setViewportWidth] = useState(800);
+  const isNarrowScreen = viewportWidth < 520;
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const isQuizMode = mode !== "free";
@@ -406,29 +407,26 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const currentQuestion = questionSettings[questionIndex];
 
   const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
-  const visualStageWidth = Math.max(360, stageHostWidth);
-  const reservedHeight = isQuizMode ? 360 : 320;
-  const maxStageVisualHeight = Math.max(220, viewportHeight - reservedHeight);
-  const stageScale = Math.min(1, maxStageVisualHeight / BASE_STAGE_HEIGHT);
-  const internalStageWidth = Math.max(
-    BASE_STAGE_WIDTH,
-    Math.ceil(visualStageWidth / Math.max(stageScale, 0.01))
-  );
-  const scaledStageWidth = Math.ceil(visualStageWidth);
+  const visualStageWidth = Math.max(200, stageHostWidth);
+  const reservedHeight = isNarrowScreen ? (isQuizMode ? 280 : 240) : (isQuizMode ? 340 : 300);
+  const maxStageVisualHeight = Math.max(200, viewportHeight - reservedHeight);
+  const widthScale = visualStageWidth / BASE_STAGE_WIDTH;
+  const heightScale = maxStageVisualHeight / BASE_STAGE_HEIGHT;
+  const stageScale = Math.min(1, widthScale, heightScale);
+  const internalStageWidth = BASE_STAGE_WIDTH;
+  const scaledStageWidth = Math.ceil(BASE_STAGE_WIDTH * stageScale);
   const scaledStageHeight = Math.ceil(BASE_STAGE_HEIGHT * stageScale);
   const visibleInternalWidth = scaledStageWidth / Math.max(stageScale, 0.01);
   const visibleInternalHeight = scaledStageHeight / Math.max(stageScale, 0.01);
   const boundedStageWidth = Math.min(internalStageWidth, visibleInternalWidth);
   const boundedStageHeight = Math.min(BASE_STAGE_HEIGHT, visibleInternalHeight);
-  const visualSafeMargin = EDGE_SAFE_PADDING + DRAG_VISUAL_MARGIN;
-  const dragExtraMargin = Math.ceil(visualSafeMargin / Math.max(stageScale, 0.01));
 
   useEffect(() => {
     if (!stageHostRef.current) return;
 
     const updateHostWidth = () => {
       if (!stageHostRef.current) return;
-      setStageHostWidth(Math.max(360, Math.floor(stageHostRef.current.clientWidth)));
+      setStageHostWidth(Math.max(200, Math.floor(stageHostRef.current.clientWidth)));
     };
 
     updateHostWidth();
@@ -443,13 +441,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   }, []);
 
   useEffect(() => {
-    const updateViewportHeight = () => {
+    const updateViewport = () => {
       setViewportHeight(window.innerHeight);
+      setViewportWidth(window.innerWidth);
     };
 
-    updateViewportHeight();
-    window.addEventListener("resize", updateViewportHeight);
-    return () => window.removeEventListener("resize", updateViewportHeight);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
   useEffect(() => {
@@ -552,16 +551,26 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     });
   };
 
-  const getDragBoundPosition = (shape: ShapeItem, pos: { x: number; y: number }) => {
+  const getDragBoundPosition = (shape: ShapeItem, absPos: { x: number; y: number }) => {
+    // Konva's dragBoundFunc gives and expects ABSOLUTE (pixel) coordinates.
+    // Convert to internal (layer) coordinates, clamp there with fixed internal
+    // padding, then convert back so bounds are independent of stageScale.
+    const safeScale = Math.max(stageScale, 0.01);
+    const internalX = absPos.x / safeScale;
+    const internalY = absPos.y / safeScale;
+
     const { halfWidth, halfHeight } = getShapeHalfExtents(shape.type, shape.rotation);
-    const minX = halfWidth + dragExtraMargin;
-    const maxX = boundedStageWidth - halfWidth - dragExtraMargin;
-    const minY = halfHeight + dragExtraMargin;
-    const maxY = boundedStageHeight - halfHeight - dragExtraMargin;
+    const minX = halfWidth + EDGE_SAFE_PADDING;
+    const maxX = boundedStageWidth - halfWidth - EDGE_SAFE_PADDING;
+    const minY = halfHeight + EDGE_SAFE_PADDING;
+    const maxY = boundedStageHeight - halfHeight - EDGE_SAFE_PADDING;
+
+    const clampedInternalX = Math.min(maxX, Math.max(minX, internalX));
+    const clampedInternalY = Math.min(maxY, Math.max(minY, internalY));
 
     return {
-      x: Math.min(maxX, Math.max(minX, pos.x)),
-      y: Math.min(maxY, Math.max(minY, pos.y))
+      x: clampedInternalX * safeScale,
+      y: clampedInternalY * safeScale
     };
   };
 
@@ -829,14 +838,23 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "10px",
-          padding: "10px",
+          flexWrap: "wrap",
+          gap: isNarrowScreen ? "6px" : "10px",
+          rowGap: "8px",
+          padding: isNarrowScreen ? "8px" : "10px",
           borderRadius: "12px",
           background: "#f4f6ff"
         }}
       >
         {isQuizMode && (
-          <span style={{ fontWeight: 700, color: "#44506b", minWidth: "68px" }}>
+          <span
+            style={{
+              fontWeight: 700,
+              color: "#44506b",
+              minWidth: isNarrowScreen ? "52px" : "68px",
+              fontSize: isNarrowScreen ? "0.85rem" : "1rem"
+            }}
+          >
             {`第${questionIndex + 1}問`}
           </span>
         )}
@@ -853,20 +871,28 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               border: selectedShape === type ? "2px solid #5470ff" : "1px solid #c6cce0",
               background: "#ffffff",
               borderRadius: "12px",
-              padding: "10px",
+              padding: isNarrowScreen ? "6px" : "10px",
               fontSize: "0.9rem",
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "48px",
-              height: "48px"
+              width: isNarrowScreen ? "38px" : "48px",
+              height: isNarrowScreen ? "38px" : "48px"
             }}
           >
             {renderPaletteShape(type)}
           </button>
         ))}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "4px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: isNarrowScreen ? "4px" : "8px",
+            marginLeft: isNarrowScreen ? "0" : "4px",
+            flexWrap: "wrap"
+          }}
+        >
           {COLOR_OPTIONS.map((color) => (
             <button
               key={color}
@@ -874,13 +900,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               onClick={() => setSelectedColor(color)}
               aria-label={`色 ${color} を選択`}
               style={{
-                width: "28px",
-                height: "28px",
+                width: isNarrowScreen ? "24px" : "28px",
+                height: isNarrowScreen ? "24px" : "28px",
                 borderRadius: "999px",
                 border: selectedColor === color ? "3px solid #1f2b52" : "1px solid #8a93b2",
                 background: color,
                 cursor: "pointer",
-                boxSizing: "border-box"
+                boxSizing: "border-box",
+                padding: 0
               }}
             />
           ))}
@@ -893,8 +920,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             background: "#ffffff",
             color: "#36405f",
             borderRadius: "10px",
-            padding: "10px 12px",
+            padding: isNarrowScreen ? "6px 10px" : "10px 12px",
             fontWeight: 700,
+            fontSize: isNarrowScreen ? "0.8rem" : "0.95rem",
             cursor: "pointer"
           }}
         >
@@ -906,7 +934,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
           margin: 0,
           minHeight: "1.6em",
           color: !isQuizMode ? "#44506b" : judgeResult === "correct" ? "#2f9e44" : judgeResult === "wrong" ? "#cc3344" : "#44506b",
-          fontWeight: 700
+          fontWeight: 700,
+          fontSize: isNarrowScreen ? "0.85rem" : "1rem",
+          lineHeight: 1.4,
+          wordBreak: "break-word"
         }}
       >
         {!isQuizMode
@@ -919,8 +950,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
                 : `くぼみに合う形を置いて、OKを押して判定しよう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : "難"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
       </p>
-      <div ref={stageHostRef} style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-        <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px" }}>
+      <div ref={stageHostRef} style={{ display: "flex", justifyContent: "center", width: "100%", minWidth: 0 }}>
+        <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px", touchAction: "none" }}>
           {showCorrectPopup && (
             <div className="correct-popup" role="status" aria-live="polite">
               <div className="correct-popup-stars" aria-hidden>✨ 🌟 ✨</div>
@@ -951,8 +982,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             </div>
           )}
           <Stage
-            width={internalStageWidth}
-            height={BASE_STAGE_HEIGHT}
+            width={scaledStageWidth}
+            height={scaledStageHeight}
             scaleX={stageScale}
             scaleY={stageScale}
           >
