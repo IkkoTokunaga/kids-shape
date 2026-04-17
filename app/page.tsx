@@ -16,7 +16,9 @@ export default function HomePage() {
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        padding: "24px"
+        padding: "16px",
+        boxSizing: "border-box",
+        overflowX: "hidden"
       }}
     >
       <section
@@ -25,7 +27,8 @@ export default function HomePage() {
           borderRadius: "16px",
           padding: "20px",
           boxShadow: "0 12px 30px rgba(0, 0, 0, 0.08)",
-          width: "min(980px, 100%)"
+          width: "min(980px, 100%)",
+          boxSizing: "border-box"
         }}
       >
         <h1 style={{ margin: "0 0 16px", fontSize: "1.25rem" }}>
@@ -46,9 +49,11 @@ export default function HomePage() {
                   background: "#f7f9ff",
                   borderRadius: "12px",
                   padding: "14px 16px",
-                  minWidth: "220px",
+                  minWidth: "min(220px, 100%)",
+                  flex: "1 1 220px",
                   textAlign: "left",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  boxSizing: "border-box"
                 }}
               >
                 <strong style={{ display: "block", marginBottom: "6px" }}>好きに遊ぶモード</strong>
@@ -65,9 +70,11 @@ export default function HomePage() {
                   background: "#f7f9ff",
                   borderRadius: "12px",
                   padding: "14px 16px",
-                  minWidth: "220px",
+                  minWidth: "min(220px, 100%)",
+                  flex: "1 1 220px",
                   textAlign: "left",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  boxSizing: "border-box"
                 }}
               >
                 <strong style={{ display: "block", marginBottom: "6px" }}>問題モード</strong>
