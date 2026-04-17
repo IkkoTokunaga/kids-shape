@@ -11,7 +11,22 @@ type ShapeItem = {
   type: ShapeType;
   x: number;
   y: number;
+  rotation: number;
+  isLocked: boolean;
   color: string;
+};
+
+type TargetSlot = {
+  type: ShapeType;
+  x: number;
+  y: number;
+};
+
+type QuestionSetting = {
+  target: TargetSlot;
+  snapDistance: number;
+  judgeDistance: number;
+  rotationTolerance: number;
 };
 
 const SHAPE_COLORS: Record<ShapeType, string> = {
@@ -32,9 +47,76 @@ const PALETTE_SHAPES: ShapeType[] = [
   "diamond"
 ];
 
+const QUESTION_SETTINGS: QuestionSetting[] = [
+  {
+    target: { type: "triangle", x: 690, y: 250 },
+    snapDistance: 38,
+    judgeDistance: 28,
+    rotationTolerance: 12
+  },
+  {
+    target: { type: "square", x: 730, y: 210 },
+    snapDistance: 34,
+    judgeDistance: 24,
+    rotationTolerance: 10
+  },
+  {
+    target: { type: "circle", x: 700, y: 290 },
+    snapDistance: 30,
+    judgeDistance: 20,
+    rotationTolerance: 8
+  },
+  {
+    target: { type: "parallelogram", x: 740, y: 240 },
+    snapDistance: 25,
+    judgeDistance: 16,
+    rotationTolerance: 6
+  },
+  {
+    target: { type: "diamond", x: 710, y: 260 },
+    snapDistance: 20,
+    judgeDistance: 12,
+    rotationTolerance: 4
+  }
+];
+
+const getNormalizedRotation = (rotation: number) => {
+  const normalized = rotation % 360;
+  return normalized < 0 ? normalized + 360 : normalized;
+};
+
+const isCloseToSlot = (shape: ShapeItem, setting: QuestionSetting) => {
+  const target = setting.target;
+  if (shape.type !== target.type) return false;
+
+  const deltaX = shape.x - target.x;
+  const deltaY = shape.y - target.y;
+  const distance = Math.hypot(deltaX, deltaY);
+
+  if (distance > setting.judgeDistance) return false;
+
+  const rotation = getNormalizedRotation(shape.rotation);
+  const rotationError = Math.min(rotation, 360 - rotation);
+  return rotationError <= setting.rotationTolerance;
+};
+
+const isNearSlotPosition = (shape: ShapeItem, setting: QuestionSetting) => {
+  const target = setting.target;
+  if (shape.type !== target.type) return false;
+
+  const deltaX = shape.x - target.x;
+  const deltaY = shape.y - target.y;
+  const distance = Math.hypot(deltaX, deltaY);
+  return distance <= setting.snapDistance;
+};
+
 export default function ShapeStage() {
   const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [isAllSolved, setIsAllSolved] = useState(false);
+  const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
+  const currentQuestion = QUESTION_SETTINGS[questionIndex];
 
   const animateDragging = (target: Konva.Shape, active: boolean) => {
     target.to({
@@ -49,13 +131,6 @@ export default function ShapeStage() {
     });
   };
 
-  const rotateShape = (target: Konva.Shape) => {
-    target.to({
-      rotation: target.rotation() + 90,
-      duration: 0.15
-    });
-  };
-
   const addShape = (type: ShapeType) => {
     setShapes((currentShapes) => {
       const nextIndex = currentShapes.filter((shape) => shape.type === type).length;
@@ -64,6 +139,8 @@ export default function ShapeStage() {
         type,
         x: 120 + ((nextIndex * 85) % 620),
         y: 120 + ((nextIndex * 60) % 260),
+        rotation: 0,
+        isLocked: false,
         color: SHAPE_COLORS[type]
       };
 
@@ -119,6 +196,135 @@ export default function ShapeStage() {
     return <svg width="24" height="24" viewBox="0 0 100 100" aria-hidden><polygon points="50,16 84,76 16,76" fill={color} /></svg>;
   };
 
+  const renderTargetSlot = (target: TargetSlot) => {
+    const sharedProps = {
+      fill: "rgba(27, 40, 83, 0.08)",
+      stroke: "rgba(27, 40, 83, 0.24)",
+      strokeWidth: 2,
+      shadowColor: "rgba(0, 0, 0, 0.18)",
+      shadowBlur: 10,
+      shadowOffsetX: 0,
+      shadowOffsetY: 3,
+      listening: false
+    };
+
+    if (target.type === "circle") {
+      return <Circle x={target.x} y={target.y} radius={60} {...sharedProps} />;
+    }
+
+    if (target.type === "square") {
+      return <Rect x={target.x - 60} y={target.y - 60} width={120} height={120} cornerRadius={10} {...sharedProps} />;
+    }
+
+    if (target.type === "trapezoid") {
+      return (
+        <Line
+          x={target.x}
+          y={target.y}
+          points={[-60, 48, 60, 48, 36, -48, -36, -48]}
+          closed
+          {...sharedProps}
+        />
+      );
+    }
+
+    if (target.type === "parallelogram") {
+      return (
+        <Line
+          x={target.x}
+          y={target.y}
+          points={[-45, -48, 75, -48, 45, 48, -75, 48]}
+          closed
+          {...sharedProps}
+        />
+      );
+    }
+
+    if (target.type === "diamond") {
+      return (
+        <Line
+          x={target.x}
+          y={target.y}
+          points={[0, -66, 58, 0, 0, 66, -58, 0]}
+          closed
+          {...sharedProps}
+        />
+      );
+    }
+
+    return <RegularPolygon x={target.x} y={target.y} sides={3} radius={75} {...sharedProps} />;
+  };
+
+  const rotateShapeById = (id: string) => {
+    if (judgeResult === "wrong") setJudgeResult("idle");
+
+    setShapes((currentShapes) =>
+      currentShapes.map((shape) => {
+        if (shape.id !== id || shape.isLocked) return shape;
+        return { ...shape, rotation: shape.rotation + 90 };
+      })
+    );
+  };
+
+  const handleDragEndById = (id: string, x: number, y: number) => {
+    if (judgeResult === "wrong") setJudgeResult("idle");
+
+    setShapes((currentShapes) =>
+      currentShapes.map((shape) => {
+        if (shape.id !== id || shape.isLocked) return shape;
+        const movedShape = { ...shape, x, y };
+
+        if (isNearSlotPosition(movedShape, currentQuestion)) {
+          return {
+            ...movedShape,
+            x: currentQuestion.target.x,
+            y: currentQuestion.target.y
+          };
+        }
+
+        return movedShape;
+      })
+    );
+  };
+
+  const judgeByOkButton = () => {
+    if (isAllSolved) return;
+
+    const matchedShape = shapes.find((shape) => !shape.isLocked && isCloseToSlot(shape, currentQuestion));
+
+    if (!matchedShape) {
+      setJudgeResult("wrong");
+      return;
+    }
+
+    setShapes((currentShapes) =>
+      currentShapes.map((shape) => {
+        if (shape.id !== matchedShape.id) return shape;
+        return {
+          ...shape,
+          x: currentQuestion.target.x,
+          y: currentQuestion.target.y,
+          rotation: 0,
+          isLocked: true
+        };
+      })
+    );
+
+    setJudgeResult("correct");
+
+    const isLastQuestion = questionIndex === QUESTION_SETTINGS.length - 1;
+    if (isLastQuestion) {
+      setIsAllSolved(true);
+      return;
+    }
+
+    window.setTimeout(() => {
+      setQuestionIndex((current) => current + 1);
+      setShapes([]);
+      setJudgeResult("idle");
+    }, 700);
+  };
+
   return (
     <div style={{ display: "grid", gap: "12px" }}>
       <div
@@ -131,6 +337,9 @@ export default function ShapeStage() {
           background: "#f4f6ff"
         }}
       >
+        <span style={{ fontWeight: 700, color: "#44506b", minWidth: "68px" }}>
+          {`第${questionIndex + 1}問`}
+        </span>
         {PALETTE_SHAPES.map((type) => (
           <button
             key={type}
@@ -157,9 +366,43 @@ export default function ShapeStage() {
             {renderPaletteShape(type)}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={judgeByOkButton}
+          disabled={judgeResult === "correct" || isAllSolved}
+          style={{
+            marginLeft: "auto",
+            border: "none",
+            background: judgeResult === "correct" || isAllSolved ? "#a9b2d1" : "#3853ff",
+            color: "#ffffff",
+            borderRadius: "10px",
+            padding: "10px 16px",
+            fontWeight: 700,
+            cursor: judgeResult === "correct" || isAllSolved ? "default" : "pointer"
+          }}
+        >
+          OK
+        </button>
       </div>
+      <p
+        style={{
+          margin: 0,
+          minHeight: "1.6em",
+          color: judgeResult === "correct" ? "#2f9e44" : judgeResult === "wrong" ? "#cc3344" : "#44506b",
+          fontWeight: 700
+        }}
+      >
+        {isAllSolved
+          ? "5問クリア！ぜんぶせいかい！すごい 🎊"
+          : judgeResult === "correct"
+          ? "せいかい！ ぴったりはまったね 🎉"
+          : judgeResult === "wrong"
+            ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
+            : `くぼみに合う形を置いて、OKを押して判定しよう（難易度 ${questionIndex + 1}/5）`}
+      </p>
       <Stage width={900} height={500}>
         <Layer>
+          {renderTargetSlot(currentQuestion.target)}
           {shapes.map((shape) => {
             if (shape.type === "circle") {
               return (
@@ -168,20 +411,20 @@ export default function ShapeStage() {
                   x={shape.x}
                   y={shape.y}
                   radius={60}
+                  rotation={shape.rotation}
                   fill={shape.color}
-                  draggable
+                  draggable={!shape.isLocked}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                    if (e.target instanceof Konva.Shape) {
+                      animateDragging(e.target, false);
+                      handleDragEndById(shape.id, e.target.x(), e.target.y());
+                    }
                   }}
-                  onClick={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
-                  onTap={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
+                  onClick={() => rotateShapeById(shape.id)}
+                  onTap={() => rotateShapeById(shape.id)}
                 />
               );
             }
@@ -194,21 +437,21 @@ export default function ShapeStage() {
                   y={shape.y - 60}
                   width={120}
                   height={120}
+                  rotation={shape.rotation}
                   cornerRadius={10}
                   fill={shape.color}
-                  draggable
+                  draggable={!shape.isLocked}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                    if (e.target instanceof Konva.Shape) {
+                      animateDragging(e.target, false);
+                      handleDragEndById(shape.id, e.target.x() + 60, e.target.y() + 60);
+                    }
                   }}
-                  onClick={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
-                  onTap={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
+                  onClick={() => rotateShapeById(shape.id)}
+                  onTap={() => rotateShapeById(shape.id)}
                 />
               );
             }
@@ -229,21 +472,21 @@ export default function ShapeStage() {
                     -36,
                     -48
                   ]}
+                  rotation={shape.rotation}
                   fill={shape.color}
                   closed
-                  draggable
+                  draggable={!shape.isLocked}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                    if (e.target instanceof Konva.Shape) {
+                      animateDragging(e.target, false);
+                      handleDragEndById(shape.id, e.target.x(), e.target.y());
+                    }
                   }}
-                  onClick={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
-                  onTap={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
+                  onClick={() => rotateShapeById(shape.id)}
+                  onTap={() => rotateShapeById(shape.id)}
                 />
               );
             }
@@ -264,21 +507,21 @@ export default function ShapeStage() {
                     -75,
                     48
                   ]}
+                  rotation={shape.rotation}
                   fill={shape.color}
                   closed
-                  draggable
+                  draggable={!shape.isLocked}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                    if (e.target instanceof Konva.Shape) {
+                      animateDragging(e.target, false);
+                      handleDragEndById(shape.id, e.target.x(), e.target.y());
+                    }
                   }}
-                  onClick={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
-                  onTap={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
+                  onClick={() => rotateShapeById(shape.id)}
+                  onTap={() => rotateShapeById(shape.id)}
                 />
               );
             }
@@ -299,21 +542,21 @@ export default function ShapeStage() {
                     -58,
                     0
                   ]}
+                  rotation={shape.rotation}
                   fill={shape.color}
                   closed
-                  draggable
+                  draggable={!shape.isLocked}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                    if (e.target instanceof Konva.Shape) {
+                      animateDragging(e.target, false);
+                      handleDragEndById(shape.id, e.target.x(), e.target.y());
+                    }
                   }}
-                  onClick={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
-                  onTap={(e) => {
-                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                  }}
+                  onClick={() => rotateShapeById(shape.id)}
+                  onTap={() => rotateShapeById(shape.id)}
                 />
               );
             }
@@ -325,20 +568,20 @@ export default function ShapeStage() {
                 y={shape.y}
                 sides={3}
                 radius={75}
+                rotation={shape.rotation}
                 fill={shape.color}
-                draggable
+                draggable={!shape.isLocked}
                 onDragStart={(e) => {
                   if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                 }}
                 onDragEnd={(e) => {
-                  if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                  if (e.target instanceof Konva.Shape) {
+                    animateDragging(e.target, false);
+                    handleDragEndById(shape.id, e.target.x(), e.target.y());
+                  }
                 }}
-                onClick={(e) => {
-                  if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                }}
-                onTap={(e) => {
-                  if (e.target instanceof Konva.Shape) rotateShape(e.target);
-                }}
+                onClick={() => rotateShapeById(shape.id)}
+                onTap={() => rotateShapeById(shape.id)}
               />
             );
           })}
