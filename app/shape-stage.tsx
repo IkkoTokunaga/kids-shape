@@ -5,7 +5,8 @@ import Konva from "konva";
 import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
 
 type ShapeType = "circle" | "square" | "triangle" | "trapezoid" | "parallelogram" | "diamond";
-type StageMode = "free" | "quiz";
+type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard";
+type QuizDifficulty = "easy" | "medium" | "hard";
 
 type ShapeItem = {
   id: string;
@@ -21,6 +22,7 @@ type TargetSlot = {
   type: ShapeType;
   x: number;
   y: number;
+  rotation?: number;
 };
 
 type QuestionSetting = {
@@ -58,7 +60,7 @@ const PALETTE_SHAPES: ShapeType[] = [
   "diamond"
 ];
 
-const QUESTION_SETTINGS: QuestionSetting[] = [
+const EASY_QUESTION_SETTINGS: QuestionSetting[] = [
   {
     targets: [{ type: "square", x: 700, y: 250 }],
     snapDistance: 18,
@@ -114,6 +116,134 @@ const QUESTION_SETTINGS: QuestionSetting[] = [
   }
 ];
 
+const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
+  {
+    targets: [{ type: "square", x: 700, y: 250, rotation: 45 }],
+    snapDistance: 18,
+    snapRotationTolerance: 18,
+    judgeDistance: 28,
+    rotationTolerance: 12
+  },
+  {
+    targets: [
+      { type: "square", x: 650, y: 220, rotation: 45 },
+      { type: "circle", x: 770, y: 220, rotation: 0 }
+    ],
+    snapDistance: 16,
+    snapRotationTolerance: 16,
+    judgeDistance: 24,
+    rotationTolerance: 10
+  },
+  {
+    targets: [
+      { type: "triangle", x: 620, y: 230, rotation: 180 },
+      { type: "square", x: 740, y: 230, rotation: 45 },
+      { type: "circle", x: 680, y: 340, rotation: 0 }
+    ],
+    snapDistance: 14,
+    snapRotationTolerance: 14,
+    judgeDistance: 20,
+    rotationTolerance: 8
+  },
+  {
+    targets: [
+      { type: "trapezoid", x: 600, y: 220, rotation: 180 },
+      { type: "parallelogram", x: 740, y: 220, rotation: 180 },
+      { type: "diamond", x: 660, y: 330, rotation: 45 },
+      { type: "circle", x: 800, y: 330, rotation: 0 }
+    ],
+    snapDistance: 12,
+    snapRotationTolerance: 12,
+    judgeDistance: 16,
+    rotationTolerance: 6
+  },
+  {
+    targets: [
+      { type: "triangle", x: 580, y: 210, rotation: 180 },
+      { type: "square", x: 700, y: 210, rotation: 45 },
+      { type: "circle", x: 820, y: 210, rotation: 0 },
+      { type: "parallelogram", x: 640, y: 330, rotation: 180 },
+      { type: "diamond", x: 780, y: 330, rotation: 45 }
+    ],
+    snapDistance: 10,
+    snapRotationTolerance: 10,
+    judgeDistance: 12,
+    rotationTolerance: 4
+  }
+];
+
+const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
+  {
+    targets: [
+      { type: "triangle", x: 600, y: 220, rotation: 180 },
+      { type: "square", x: 740, y: 220, rotation: 45 },
+      { type: "circle", x: 670, y: 340, rotation: 0 }
+    ],
+    snapDistance: 12,
+    snapRotationTolerance: 12,
+    judgeDistance: 16,
+    rotationTolerance: 6
+  },
+  {
+    targets: [
+      { type: "trapezoid", x: 560, y: 210, rotation: 180 },
+      { type: "parallelogram", x: 690, y: 210, rotation: 180 },
+      { type: "diamond", x: 820, y: 210, rotation: 45 },
+      { type: "square", x: 620, y: 330, rotation: 45 },
+      { type: "triangle", x: 760, y: 330, rotation: 180 }
+    ],
+    snapDistance: 10,
+    snapRotationTolerance: 10,
+    judgeDistance: 14,
+    rotationTolerance: 5
+  },
+  {
+    targets: [
+      { type: "circle", x: 540, y: 210, rotation: 0 },
+      { type: "square", x: 660, y: 210, rotation: 45 },
+      { type: "diamond", x: 780, y: 210, rotation: 45 },
+      { type: "triangle", x: 860, y: 210, rotation: 180 },
+      { type: "parallelogram", x: 600, y: 330, rotation: 180 },
+      { type: "trapezoid", x: 760, y: 330, rotation: 180 }
+    ],
+    snapDistance: 9,
+    snapRotationTolerance: 9,
+    judgeDistance: 12,
+    rotationTolerance: 4
+  },
+  {
+    targets: [
+      { type: "triangle", x: 520, y: 200, rotation: 180 },
+      { type: "square", x: 630, y: 200, rotation: 45 },
+      { type: "circle", x: 740, y: 200, rotation: 0 },
+      { type: "diamond", x: 850, y: 200, rotation: 45 },
+      { type: "parallelogram", x: 570, y: 330, rotation: 180 },
+      { type: "trapezoid", x: 700, y: 330, rotation: 180 },
+      { type: "square", x: 830, y: 330, rotation: 45 }
+    ],
+    snapDistance: 8,
+    snapRotationTolerance: 8,
+    judgeDistance: 10,
+    rotationTolerance: 4
+  },
+  {
+    targets: [
+      { type: "circle", x: 500, y: 190, rotation: 0 },
+      { type: "triangle", x: 600, y: 190, rotation: 180 },
+      { type: "square", x: 700, y: 190, rotation: 45 },
+      { type: "diamond", x: 800, y: 190, rotation: 45 },
+      { type: "trapezoid", x: 880, y: 190, rotation: 180 },
+      { type: "parallelogram", x: 540, y: 320, rotation: 180 },
+      { type: "square", x: 660, y: 320, rotation: 45 },
+      { type: "triangle", x: 780, y: 320, rotation: 180 }
+    ],
+    snapDistance: 7,
+    snapRotationTolerance: 7,
+    judgeDistance: 9,
+    rotationTolerance: 3
+  }
+];
+
 const getNormalizedRotation = (rotation: number) => {
   const normalized = rotation % 360;
   return normalized < 0 ? normalized + 360 : normalized;
@@ -128,10 +258,12 @@ const getEquivalentAngles = (type: ShapeType, rotation: number) => {
   return [normalized];
 };
 
-const getMinRotationError = (type: ShapeType, rotation: number) => {
+const getMinRotationError = (type: ShapeType, rotation: number, targetRotation = 0) => {
   const equivalentAngles = getEquivalentAngles(type, rotation);
+  const normalizedTarget = getNormalizedRotation(targetRotation);
   return equivalentAngles.reduce((minError, angle) => {
-    const error = Math.min(angle, 360 - angle);
+    const delta = Math.abs(angle - normalizedTarget);
+    const error = Math.min(delta, 360 - delta);
     return Math.min(minError, error);
   }, Number.POSITIVE_INFINITY);
 };
@@ -145,7 +277,7 @@ const isCloseToSlot = (shape: ShapeItem, target: TargetSlot, setting: QuestionSe
 
   if (distance > setting.judgeDistance) return false;
 
-  const minRotationError = getMinRotationError(shape.type, shape.rotation);
+  const minRotationError = getMinRotationError(shape.type, shape.rotation, target.rotation ?? 0);
   return minRotationError <= setting.rotationTolerance;
 };
 
@@ -154,9 +286,6 @@ const findNearestSlot = (
   targets: TargetSlot[],
   setting: QuestionSetting
 ): TargetSlot | null => {
-  const rotationError = getMinRotationError(shape.type, shape.rotation);
-  if (rotationError > setting.snapRotationTolerance) return null;
-
   const sameTypeTargets = targets.filter((target) => target.type === shape.type);
   if (sameTypeTargets.length === 0) return null;
 
@@ -164,6 +293,9 @@ const findNearestSlot = (
   let nearestDistance = Number.POSITIVE_INFINITY;
 
   for (const target of sameTypeTargets) {
+    const rotationError = getMinRotationError(shape.type, shape.rotation, target.rotation ?? 0);
+    if (rotationError > setting.snapRotationTolerance) continue;
+
     const deltaX = shape.x - target.x;
     const deltaY = shape.y - target.y;
     const distance = Math.hypot(deltaX, deltaY);
@@ -199,8 +331,16 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
-  const isQuizMode = mode === "quiz";
-  const currentQuestion = QUESTION_SETTINGS[questionIndex];
+  const isQuizMode = mode !== "free";
+  const difficulty: QuizDifficulty =
+    mode === "quiz-medium" ? "medium" : mode === "quiz-hard" ? "hard" : "easy";
+  const questionSettingsByDifficulty: Record<QuizDifficulty, QuestionSetting[]> = {
+    easy: EASY_QUESTION_SETTINGS,
+    medium: MEDIUM_QUESTION_SETTINGS,
+    hard: HARD_QUESTION_SETTINGS
+  };
+  const questionSettings = questionSettingsByDifficulty[difficulty];
+  const currentQuestion = questionSettings[questionIndex];
 
   const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
   const availableWidth = Math.max(360, viewportSize.width - 80);
@@ -238,6 +378,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setCelebrationLevel(0);
     setShowCorrectPopup(false);
   }, [questionIndex]);
+
+  useEffect(() => {
+    setQuestionIndex(0);
+    setShapes([]);
+    setMatchedTargetIndices([]);
+    setIsAllSolved(false);
+    setJudgeResult("idle");
+  }, [difficulty]);
 
   useEffect(() => {
     return () => {
@@ -385,7 +533,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       shadowBlur: 10,
       shadowOffsetX: 0,
       shadowOffsetY: 3,
-      listening: false
+      listening: false,
+      rotation: target.rotation ?? 0
     };
 
     if (target.type === "circle") {
@@ -444,7 +593,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setShapes((currentShapes) =>
       currentShapes.map((shape) => {
         if (shape.id !== id || shape.isLocked) return shape;
-        return { ...shape, rotation: shape.rotation + 90 };
+        return { ...shape, rotation: shape.rotation + 45 };
       })
     );
   };
@@ -516,7 +665,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setJudgeResult("correct");
 
     const isQuestionSolved = updatedMatchedIndices.length === currentQuestion.targets.length;
-    const isLastQuestion = questionIndex === QUESTION_SETTINGS.length - 1;
+    const isLastQuestion = questionIndex === questionSettings.length - 1;
     const soundLevel: 1 | 2 = isQuestionSolved && isLastQuestion ? 2 : 1;
     void playSuccessSound(soundLevel).catch(() => undefined);
 
@@ -639,12 +788,12 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         {!isQuizMode
           ? "好きな形を置いて、ドラッグや回転で自由に遊ぼう"
           : isAllSolved
-            ? "5問クリア！ぜんぶせいかい！すごい 🎊"
+            ? `${questionSettings.length}問クリア！ぜんぶせいかい！すごい 🎊`
             : judgeResult === "correct"
               ? "せいかい！ ぴったりはまったね 🎉"
               : judgeResult === "wrong"
                 ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
-                : `くぼみに合う形を置いて、OKを押して判定しよう（難易度 ${questionIndex + 1}/5・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
+                : `くぼみに合う形を置いて、OKを押して判定しよう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : "難"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
       </p>
       <div style={{ display: "flex", justifyContent: "center" }}>
         <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px" }}>

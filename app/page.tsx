@@ -3,10 +3,12 @@
 import { useState } from "react";
 import ShapeStageClient from "./shape-stage-client";
 
-type Mode = "free" | "quiz";
+type QuizDifficulty = "easy" | "medium" | "hard";
+type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard";
 
 export default function HomePage() {
-  const [selectedMode, setSelectedMode] = useState<Mode | null>(null);
+  const [selectedMode, setSelectedMode] = useState<StageMode | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuizDifficulty>("easy");
 
   return (
     <main
@@ -54,7 +56,10 @@ export default function HomePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedMode("quiz")}
+                onClick={() => {
+                  setSelectedDifficulty("easy");
+                  setSelectedMode("quiz-easy");
+                }}
                 style={{
                   border: "1px solid #c6cce0",
                   background: "#f7f9ff",
@@ -74,7 +79,10 @@ export default function HomePage() {
           <div style={{ display: "grid", gap: "12px" }}>
             <button
               type="button"
-              onClick={() => setSelectedMode(null)}
+              onClick={() => {
+                setSelectedMode(null);
+                setSelectedDifficulty("easy");
+              }}
               style={{
                 width: "fit-content",
                 border: "1px solid #c6cce0",
@@ -86,7 +94,31 @@ export default function HomePage() {
             >
               ← TOPに戻る
             </button>
-            <ShapeStageClient key={selectedMode} mode={selectedMode} />
+            {selectedMode !== "free" && (
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {(["easy", "medium", "hard"] as const).map((difficulty) => (
+                  <button
+                    key={difficulty}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDifficulty(difficulty);
+                      setSelectedMode(`quiz-${difficulty}`);
+                    }}
+                    style={{
+                      border: selectedDifficulty === difficulty ? "2px solid #5470ff" : "1px solid #c6cce0",
+                      background: "#ffffff",
+                      borderRadius: "10px",
+                      padding: "8px 12px",
+                      fontWeight: 700,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : "難"}
+                  </button>
+                ))}
+              </div>
+            )}
+            <ShapeStageClient key={`${selectedMode}-${selectedDifficulty}`} mode={selectedMode} />
           </div>
         )}
       </section>
