@@ -321,6 +321,7 @@ const BASE_STAGE_WIDTH = 900;
 const BASE_STAGE_HEIGHT = 500;
 const NEXT_QUESTION_DELAY_MS = 1300;
 const EDGE_SAFE_PADDING = 10;
+const SNAP_SOUND_FILE_URL = "/sounds/peta.mp3";
 const TRIANGLE_POINTS: [number, number][] = [
   [0, -75],
   [64.95, 37.5],
@@ -395,6 +396,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const isNarrowScreen = viewportWidth < 520;
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
+  const snapAudioRef = useRef<HTMLAudioElement | null>(null);
   const isQuizMode = mode !== "free";
   const difficulty: QuizDifficulty =
     mode === "quiz-medium" ? "medium" : mode === "quiz-hard" ? "hard" : "easy";
@@ -480,7 +482,17 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   }, [difficulty]);
 
   useEffect(() => {
+    const snapAudio = new Audio(SNAP_SOUND_FILE_URL);
+    snapAudio.preload = "auto";
+    snapAudio.volume = 0.82;
+    snapAudioRef.current = snapAudio;
+
     return () => {
+      if (snapAudioRef.current) {
+        snapAudioRef.current.pause();
+        snapAudioRef.current.src = "";
+        snapAudioRef.current = null;
+      }
       if (!audioContextRef.current) return;
       void audioContextRef.current.close().catch(() => undefined);
       audioContextRef.current = null;
@@ -538,7 +550,80 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     });
   };
 
+  const playSnapSynth = () => {
+    const context = audioContextRef.current;
+    const masterGain = masterGainRef.current;
+    if (!context || !masterGain) {
+      // Audio is primed on drag start. If not ready yet, skip this one quietly.
+      return;
+    }
+    const now = context.currentTime;
+
+    const main = context.createOscillator();
+    const mainGain = context.createGain();
+    const pop = context.createOscillator();
+    const popGain = context.createGain();
+    const air = context.createOscillator();
+    const airGain = context.createGain();
+
+    // Cute "nyu" feel: soft attack + slight upward pitch glide.
+    main.type = "sine";
+    main.frequency.setValueAtTime(420, now);
+    main.frequency.exponentialRampToValueAtTime(620, now + 0.07);
+
+    pop.type = "triangle";
+    pop.frequency.setValueAtTime(320, now);
+    pop.frequency.exponentialRampToValueAtTime(520, now + 0.055);
+
+    air.type = "sine";
+    air.frequency.setValueAtTime(980, now + 0.01);
+    air.frequency.exponentialRampToValueAtTime(760, now + 0.07);
+
+    mainGain.gain.setValueAtTime(0.0001, now);
+    mainGain.gain.exponentialRampToValueAtTime(0.04, now + 0.006);
+    mainGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+    popGain.gain.setValueAtTime(0.0001, now);
+    popGain.gain.exponentialRampToValueAtTime(0.024, now + 0.004);
+    popGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+
+    airGain.gain.setValueAtTime(0.0001, now + 0.008);
+    airGain.gain.exponentialRampToValueAtTime(0.01, now + 0.018);
+    airGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+    main.connect(mainGain);
+    mainGain.connect(masterGain);
+    pop.connect(popGain);
+    popGain.connect(masterGain);
+    air.connect(airGain);
+    airGain.connect(masterGain);
+
+    main.start(now);
+    main.stop(now + 0.16);
+    pop.start(now);
+    pop.stop(now + 0.115);
+    air.start(now + 0.008);
+    air.stop(now + 0.1);
+  };
+
+  const playSnapSound = () => {
+    const snapAudio = snapAudioRef.current;
+    if (snapAudio) {
+      snapAudio.currentTime = 0;
+      void snapAudio.play().catch(() => {
+        playSnapSynth();
+      });
+      return;
+    }
+
+    playSnapSynth();
+  };
+
   const animateDragging = (target: Konva.Shape, active: boolean) => {
+    if (active) {
+      // Prime / resume audio on user gesture to remove first-play latency.
+      void getOrCreateAudio().catch(() => undefined);
+    }
     target.to({
       scaleX: active ? 1.04 : 1,
       scaleY: active ? 1.04 : 1,
@@ -736,6 +821,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         if (isQuizMode) {
           const nearestTarget = findNearestSlot(movedShape, unmatchedTargets, currentQuestion);
           if (!nearestTarget) return movedShape;
+          playSnapSound();
 
           return {
             ...movedShape,
