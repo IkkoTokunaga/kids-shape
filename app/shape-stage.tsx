@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Konva from "konva";
 import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
 
@@ -24,8 +24,9 @@ type TargetSlot = {
 };
 
 type QuestionSetting = {
-  target: TargetSlot;
+  targets: TargetSlot[];
   snapDistance: number;
+  snapRotationTolerance: number;
   judgeDistance: number;
   rotationTolerance: number;
 };
@@ -50,32 +51,55 @@ const PALETTE_SHAPES: ShapeType[] = [
 
 const QUESTION_SETTINGS: QuestionSetting[] = [
   {
-    target: { type: "triangle", x: 690, y: 250 },
-    snapDistance: 38,
+    targets: [{ type: "square", x: 700, y: 250 }],
+    snapDistance: 18,
+    snapRotationTolerance: 18,
     judgeDistance: 28,
     rotationTolerance: 12
   },
   {
-    target: { type: "square", x: 730, y: 210 },
-    snapDistance: 34,
+    targets: [
+      { type: "square", x: 650, y: 220 },
+      { type: "circle", x: 770, y: 220 }
+    ],
+    snapDistance: 16,
+    snapRotationTolerance: 16,
     judgeDistance: 24,
     rotationTolerance: 10
   },
   {
-    target: { type: "circle", x: 700, y: 290 },
-    snapDistance: 30,
+    targets: [
+      { type: "triangle", x: 620, y: 230 },
+      { type: "square", x: 740, y: 230 },
+      { type: "circle", x: 680, y: 340 }
+    ],
+    snapDistance: 14,
+    snapRotationTolerance: 14,
     judgeDistance: 20,
     rotationTolerance: 8
   },
   {
-    target: { type: "parallelogram", x: 740, y: 240 },
-    snapDistance: 25,
+    targets: [
+      { type: "trapezoid", x: 600, y: 220 },
+      { type: "parallelogram", x: 740, y: 220 },
+      { type: "diamond", x: 660, y: 330 },
+      { type: "circle", x: 800, y: 330 }
+    ],
+    snapDistance: 12,
+    snapRotationTolerance: 12,
     judgeDistance: 16,
     rotationTolerance: 6
   },
   {
-    target: { type: "diamond", x: 710, y: 260 },
-    snapDistance: 20,
+    targets: [
+      { type: "triangle", x: 580, y: 210 },
+      { type: "square", x: 700, y: 210 },
+      { type: "circle", x: 820, y: 210 },
+      { type: "parallelogram", x: 640, y: 330 },
+      { type: "diamond", x: 780, y: 330 }
+    ],
+    snapDistance: 10,
+    snapRotationTolerance: 10,
     judgeDistance: 12,
     rotationTolerance: 4
   }
@@ -86,8 +110,24 @@ const getNormalizedRotation = (rotation: number) => {
   return normalized < 0 ? normalized + 360 : normalized;
 };
 
-const isCloseToSlot = (shape: ShapeItem, setting: QuestionSetting) => {
-  const target = setting.target;
+const getEquivalentAngles = (type: ShapeType, rotation: number) => {
+  const normalized = getNormalizedRotation(rotation);
+
+  if (type === "circle") return [0];
+  if (type === "square" || type === "diamond") return [0, 90, 180, 270];
+  if (type === "parallelogram") return [0, 180];
+  return [normalized];
+};
+
+const getMinRotationError = (type: ShapeType, rotation: number) => {
+  const equivalentAngles = getEquivalentAngles(type, rotation);
+  return equivalentAngles.reduce((minError, angle) => {
+    const error = Math.min(angle, 360 - angle);
+    return Math.min(minError, error);
+  }, Number.POSITIVE_INFINITY);
+};
+
+const isCloseToSlot = (shape: ShapeItem, target: TargetSlot, setting: QuestionSetting) => {
   if (shape.type !== target.type) return false;
 
   const deltaX = shape.x - target.x;
@@ -96,33 +136,69 @@ const isCloseToSlot = (shape: ShapeItem, setting: QuestionSetting) => {
 
   if (distance > setting.judgeDistance) return false;
 
-  const rotation = getNormalizedRotation(shape.rotation);
-  const rotationError = Math.min(rotation, 360 - rotation);
-  return rotationError <= setting.rotationTolerance;
+  const minRotationError = getMinRotationError(shape.type, shape.rotation);
+  return minRotationError <= setting.rotationTolerance;
 };
 
-const isNearSlotPosition = (shape: ShapeItem, setting: QuestionSetting) => {
-  const target = setting.target;
-  if (shape.type !== target.type) return false;
+const findNearestSlot = (shape: ShapeItem, targets: TargetSlot[], setting: QuestionSetting) => {
+  const rotationError = getMinRotationError(shape.type, shape.rotation);
+  if (rotationError > setting.snapRotationTolerance) return null;
 
-  const deltaX = shape.x - target.x;
-  const deltaY = shape.y - target.y;
-  const distance = Math.hypot(deltaX, deltaY);
-  return distance <= setting.snapDistance;
+  const sameTypeTargets = targets.filter((target) => target.type === shape.type);
+  if (sameTypeTargets.length === 0) return null;
+
+  let nearest: TargetSlot | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  sameTypeTargets.forEach((target) => {
+    const deltaX = shape.x - target.x;
+    const deltaY = shape.y - target.y;
+    const distance = Math.hypot(deltaX, deltaY);
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = target;
+    }
+  });
+
+  if (!nearest || nearestDistance > setting.snapDistance) return null;
+  return nearest;
 };
 
 type ShapeStageProps = {
   mode: StageMode;
 };
 
+const BASE_STAGE_WIDTH = 900;
+const BASE_STAGE_HEIGHT = 500;
+
 export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [matchedTargetIndices, setMatchedTargetIndices] = useState<number[]>([]);
   const [isAllSolved, setIsAllSolved] = useState(false);
   const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
+  const [viewportSize, setViewportSize] = useState({ width: 1280, height: 720 });
   const isQuizMode = mode === "quiz";
   const currentQuestion = QUESTION_SETTINGS[questionIndex];
+
+  const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
+  const availableWidth = Math.max(360, viewportSize.width - 80);
+  const availableHeight = Math.max(220, viewportSize.height - 360);
+  const stageScale = Math.min(1, availableWidth / BASE_STAGE_WIDTH, availableHeight / BASE_STAGE_HEIGHT);
+  const scaledStageWidth = Math.round(BASE_STAGE_WIDTH * stageScale);
+  const scaledStageHeight = Math.round(BASE_STAGE_HEIGHT * stageScale);
+
+  useEffect(() => {
+    const updateViewportSize = () => {
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    updateViewportSize();
+    window.addEventListener("resize", updateViewportSize);
+    return () => window.removeEventListener("resize", updateViewportSize);
+  }, []);
 
   const animateDragging = (target: Konva.Shape, active: boolean) => {
     target.to({
@@ -202,10 +278,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     return <svg width="24" height="24" viewBox="0 0 100 100" aria-hidden><polygon points="50,16 84,76 16,76" fill={color} /></svg>;
   };
 
-  const renderTargetSlot = (target: TargetSlot) => {
+  const renderTargetSlot = (target: TargetSlot, isMatched: boolean, key: string) => {
     const sharedProps = {
-      fill: "rgba(27, 40, 83, 0.08)",
-      stroke: "rgba(27, 40, 83, 0.24)",
+      fill: isMatched ? "rgba(47, 158, 68, 0.2)" : "rgba(27, 40, 83, 0.08)",
+      stroke: isMatched ? "rgba(47, 158, 68, 0.6)" : "rgba(27, 40, 83, 0.24)",
       strokeWidth: 2,
       shadowColor: "rgba(0, 0, 0, 0.18)",
       shadowBlur: 10,
@@ -215,16 +291,17 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     };
 
     if (target.type === "circle") {
-      return <Circle x={target.x} y={target.y} radius={60} {...sharedProps} />;
+      return <Circle key={key} x={target.x} y={target.y} radius={60} {...sharedProps} />;
     }
 
     if (target.type === "square") {
-      return <Rect x={target.x - 60} y={target.y - 60} width={120} height={120} cornerRadius={10} {...sharedProps} />;
+      return <Rect key={key} x={target.x - 60} y={target.y - 60} width={120} height={120} cornerRadius={10} {...sharedProps} />;
     }
 
     if (target.type === "trapezoid") {
       return (
         <Line
+          key={key}
           x={target.x}
           y={target.y}
           points={[-60, 48, 60, 48, 36, -48, -36, -48]}
@@ -237,6 +314,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     if (target.type === "parallelogram") {
       return (
         <Line
+          key={key}
           x={target.x}
           y={target.y}
           points={[-45, -48, 75, -48, 45, 48, -75, 48]}
@@ -249,6 +327,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     if (target.type === "diamond") {
       return (
         <Line
+          key={key}
           x={target.x}
           y={target.y}
           points={[0, -66, 58, 0, 0, 66, -58, 0]}
@@ -258,7 +337,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       );
     }
 
-    return <RegularPolygon x={target.x} y={target.y} sides={3} radius={75} {...sharedProps} />;
+    return <RegularPolygon key={key} x={target.x} y={target.y} sides={3} radius={75} {...sharedProps} />;
   };
 
   const rotateShapeById = (id: string) => {
@@ -280,11 +359,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         if (shape.id !== id || shape.isLocked) return shape;
         const movedShape = { ...shape, x, y };
 
-        if (isQuizMode && isNearSlotPosition(movedShape, currentQuestion)) {
+        if (isQuizMode) {
+          const nearestTarget = findNearestSlot(movedShape, unmatchedTargets, currentQuestion);
+          if (!nearestTarget) return movedShape;
+
           return {
             ...movedShape,
-            x: currentQuestion.target.x,
-            y: currentQuestion.target.y
+            x: nearestTarget.x,
+            y: nearestTarget.y
           };
         }
 
@@ -297,37 +379,62 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     if (!isQuizMode) return;
     if (isAllSolved) return;
 
-    const matchedShape = shapes.find((shape) => !shape.isLocked && isCloseToSlot(shape, currentQuestion));
+    const usedShapeIds = new Set<string>();
+    const nextMatchedIndices: number[] = [];
 
-    if (!matchedShape) {
+    currentQuestion.targets.forEach((target, targetIndex) => {
+      if (matchedTargetIndices.includes(targetIndex)) return;
+
+      const matchedShape = shapes.find((shape) => {
+        if (shape.isLocked) return false;
+        if (usedShapeIds.has(shape.id)) return false;
+        return isCloseToSlot(shape, target, currentQuestion);
+      });
+
+      if (!matchedShape) return;
+      usedShapeIds.add(matchedShape.id);
+      nextMatchedIndices.push(targetIndex);
+    });
+
+    if (nextMatchedIndices.length === 0) {
       setJudgeResult("wrong");
       return;
     }
 
     setShapes((currentShapes) =>
       currentShapes.map((shape) => {
-        if (shape.id !== matchedShape.id) return shape;
-        return {
-          ...shape,
-          x: currentQuestion.target.x,
-          y: currentQuestion.target.y,
-          rotation: 0,
-          isLocked: true
-        };
+        const matchedEntry = currentQuestion.targets.find((target, targetIndex) => {
+          if (!nextMatchedIndices.includes(targetIndex)) return false;
+          return isCloseToSlot(shape, target, currentQuestion);
+        });
+        if (!matchedEntry || shape.isLocked) return shape;
+
+        return { ...shape, x: matchedEntry.x, y: matchedEntry.y, rotation: 0, isLocked: true };
       })
     );
 
+    const updatedMatchedIndices = [...matchedTargetIndices, ...nextMatchedIndices];
+    setMatchedTargetIndices(updatedMatchedIndices);
     setJudgeResult("correct");
 
-    const isLastQuestion = questionIndex === QUESTION_SETTINGS.length - 1;
-    if (isLastQuestion) {
-      setIsAllSolved(true);
+    const isQuestionSolved = updatedMatchedIndices.length === currentQuestion.targets.length;
+    if (isQuestionSolved) {
+      const isLastQuestion = questionIndex === QUESTION_SETTINGS.length - 1;
+      if (isLastQuestion) {
+        setIsAllSolved(true);
+        return;
+      }
+
+      window.setTimeout(() => {
+        setQuestionIndex((current) => current + 1);
+        setShapes([]);
+        setMatchedTargetIndices([]);
+        setJudgeResult("idle");
+      }, 700);
       return;
     }
 
     window.setTimeout(() => {
-      setQuestionIndex((current) => current + 1);
-      setShapes([]);
       setJudgeResult("idle");
     }, 700);
   };
@@ -335,6 +442,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const clearScreen = () => {
     setShapes([]);
     if (isQuizMode && !isAllSolved) {
+      setMatchedTargetIndices([]);
       setJudgeResult("idle");
     }
   };
@@ -414,12 +522,25 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               ? "せいかい！ ぴったりはまったね 🎉"
               : judgeResult === "wrong"
                 ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
-                : `くぼみに合う形を置いて、OKを押して判定しよう（難易度 ${questionIndex + 1}/5）`}
+                : `くぼみに合う形を置いて、OKを押して判定しよう（難易度 ${questionIndex + 1}/5・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
       </p>
-      <Stage width={900} height={500}>
-        <Layer>
-          {isQuizMode && renderTargetSlot(currentQuestion.target)}
-          {shapes.map((shape) => {
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ width: scaledStageWidth, height: scaledStageHeight }}>
+          <div
+            style={{
+              width: BASE_STAGE_WIDTH,
+              height: BASE_STAGE_HEIGHT,
+              transform: `scale(${stageScale})`,
+              transformOrigin: "top left"
+            }}
+          >
+            <Stage width={BASE_STAGE_WIDTH} height={BASE_STAGE_HEIGHT}>
+              <Layer>
+                {isQuizMode &&
+                  currentQuestion.targets.map((target, idx) =>
+                    renderTargetSlot(target, matchedTargetIndices.includes(idx), `target-slot-${idx}`)
+                  )}
+                {shapes.map((shape) => {
             if (shape.type === "circle") {
               return (
                 <Circle
@@ -449,10 +570,12 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               return (
                 <Rect
                   key={shape.id}
-                  x={shape.x - 60}
-                  y={shape.y - 60}
+                  x={shape.x}
+                  y={shape.y}
                   width={120}
                   height={120}
+                  offsetX={60}
+                  offsetY={60}
                   rotation={shape.rotation}
                   cornerRadius={10}
                   fill={shape.color}
@@ -463,7 +586,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   onDragEnd={(e) => {
                     if (e.target instanceof Konva.Shape) {
                       animateDragging(e.target, false);
-                      handleDragEndById(shape.id, e.target.x() + 60, e.target.y() + 60);
+                      handleDragEndById(shape.id, e.target.x(), e.target.y());
                     }
                   }}
                   onClick={() => rotateShapeById(shape.id)}
@@ -600,9 +723,12 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 onTap={() => rotateShapeById(shape.id)}
               />
             );
-          })}
-        </Layer>
-      </Stage>
+                })}
+              </Layer>
+            </Stage>
+          </div>
+        </div>
+      </div>
       {isQuizMode && (
         <div style={{ display: "flex", justifyContent: "center" }}>
           <button
