@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Konva from "konva";
 import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
 
@@ -197,6 +197,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [viewportSize, setViewportSize] = useState({ width: 1280, height: 720 });
   const [celebrationLevel, setCelebrationLevel] = useState<0 | 1 | 2>(0);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
   const isQuizMode = mode === "quiz";
   const currentQuestion = QUESTION_SETTINGS[questionIndex];
 
@@ -228,9 +230,6 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       setCelebrationLevel(0);
     }, level === 2 ? 1400 : 900);
 
-    // Browser policy may block autoplay; ignore failures.
-    void playSuccessSound(level).catch(() => undefined);
-
     return () => window.clearTimeout(timeoutId);
   }, [isQuizMode, judgeResult, isAllSolved]);
 
@@ -240,22 +239,48 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setShowCorrectPopup(false);
   }, [questionIndex]);
 
-  const playSuccessSound = async (level: 1 | 2) => {
-    const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
+  useEffect(() => {
+    return () => {
+      if (!audioContextRef.current) return;
+      void audioContextRef.current.close().catch(() => undefined);
+      audioContextRef.current = null;
+      masterGainRef.current = null;
+    };
+  }, []);
 
-    const audioContext = new AudioCtx();
-    if (audioContext.state === "suspended") {
-      await audioContext.resume();
+  const getOrCreateAudio = async () => {
+    if (!audioContextRef.current) {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return null;
+
+      const context = new AudioCtx();
+      const masterGain = context.createGain();
+      masterGain.gain.value = 0.22;
+      masterGain.connect(context.destination);
+
+      audioContextRef.current = context;
+      masterGainRef.current = masterGain;
     }
 
-    const now = audioContext.currentTime;
+    if (audioContextRef.current.state === "suspended") {
+      await audioContextRef.current.resume();
+    }
+
+    return { context: audioContextRef.current, masterGain: masterGainRef.current };
+  };
+
+  const playSuccessSound = async (level: 1 | 2) => {
+    const audio = await getOrCreateAudio();
+    if (!audio || !audio.masterGain) return;
+    const { context, masterGain } = audio;
+    const now = context.currentTime;
     const notes = level === 2 ? [523.25, 659.25, 783.99, 1046.5] : [523.25, 659.25, 783.99];
-    let lastStopAt = now;
 
     notes.forEach((frequency, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
       const startAt = now + index * 0.085;
       const stopAt = startAt + 0.2;
 
@@ -267,16 +292,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.19);
 
       oscillator.connect(gain);
-      gain.connect(audioContext.destination);
+      gain.connect(masterGain);
       oscillator.start(startAt);
       oscillator.stop(stopAt);
-      lastStopAt = Math.max(lastStopAt, stopAt);
     });
-
-    const closeDelayMs = Math.max(0, Math.ceil((lastStopAt - audioContext.currentTime + 0.12) * 1000));
-    window.setTimeout(() => {
-      void audioContext.close().catch(() => undefined);
-    }, closeDelayMs);
   };
 
   const animateDragging = (target: Konva.Shape, active: boolean) => {
@@ -497,8 +516,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setJudgeResult("correct");
 
     const isQuestionSolved = updatedMatchedIndices.length === currentQuestion.targets.length;
+    const isLastQuestion = questionIndex === QUESTION_SETTINGS.length - 1;
+    const soundLevel: 1 | 2 = isQuestionSolved && isLastQuestion ? 2 : 1;
+    void playSuccessSound(soundLevel).catch(() => undefined);
+
     if (isQuestionSolved) {
-      const isLastQuestion = questionIndex === QUESTION_SETTINGS.length - 1;
       if (isLastQuestion) {
         setIsAllSolved(true);
         return;
