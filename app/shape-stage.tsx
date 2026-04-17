@@ -322,6 +322,8 @@ const BASE_STAGE_HEIGHT = 500;
 const NEXT_QUESTION_DELAY_MS = 1300;
 const EDGE_SAFE_PADDING = 10;
 const SNAP_SOUND_FILE_URL = "/sounds/peta.mp3";
+const SHAPE_OUTLINE_STROKE = "rgba(27, 40, 83, 0.28)";
+const SHAPE_OUTLINE_STROKE_WIDTH = 1.5;
 const TRIANGLE_POINTS: [number, number][] = [
   [0, -75],
   [64.95, 37.5],
@@ -1088,6 +1090,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   radius={60}
                   rotation={shape.rotation}
                   fill={shape.color}
+                  stroke={SHAPE_OUTLINE_STROKE}
+                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
                   draggable={!shape.isLocked}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
@@ -1118,6 +1122,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   cornerRadius={10}
                   fill={shape.color}
+                  stroke={SHAPE_OUTLINE_STROKE}
+                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
                   draggable={!shape.isLocked}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
@@ -1154,6 +1160,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
+                  stroke={SHAPE_OUTLINE_STROKE}
+                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
                   draggable={!shape.isLocked}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
@@ -1190,6 +1198,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
+                  stroke={SHAPE_OUTLINE_STROKE}
+                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
                   draggable={!shape.isLocked}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
@@ -1226,6 +1236,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
+                  stroke={SHAPE_OUTLINE_STROKE}
+                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
                   draggable={!shape.isLocked}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
@@ -1252,6 +1264,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 radius={75}
                 rotation={shape.rotation}
                 fill={shape.color}
+                stroke={SHAPE_OUTLINE_STROKE}
+                strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
                 draggable={!shape.isLocked}
                 dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                 onDragStart={(e) => {
