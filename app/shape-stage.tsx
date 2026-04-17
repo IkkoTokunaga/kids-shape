@@ -40,6 +40,15 @@ const SHAPE_COLORS: Record<ShapeType, string> = {
   diamond: "#FFD166"
 };
 
+const COLOR_OPTIONS = [
+  "#A8D8EA",
+  "#FFF3B0",
+  "#FFB7B2",
+  "#CDB4DB",
+  "#B8E1DD",
+  "#FFD166"
+];
+
 const PALETTE_SHAPES: ShapeType[] = [
   "square",
   "triangle",
@@ -178,6 +187,7 @@ const BASE_STAGE_HEIGHT = 500;
 
 export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
+  const [selectedColor, setSelectedColor] = useState<string>(SHAPE_COLORS.circle);
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [matchedTargetIndices, setMatchedTargetIndices] = useState<number[]>([]);
@@ -217,7 +227,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     });
   };
 
-  const addShape = (type: ShapeType) => {
+  const addShape = (type: ShapeType, color: string) => {
     setShapes((currentShapes) => {
       const nextIndex = currentShapes.filter((shape) => shape.type === type).length;
       const newShape: ShapeItem = {
@@ -227,7 +237,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         y: 120 + ((nextIndex * 60) % 260),
         rotation: 0,
         isLocked: false,
-        color: SHAPE_COLORS[type]
+        color
       };
 
       return [...currentShapes, newShape];
@@ -474,7 +484,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             type="button"
             onClick={() => {
               setSelectedShape(type);
-              addShape(type);
+              addShape(type, selectedColor);
             }}
             aria-label={`${type} を選択`}
             style={{
@@ -494,6 +504,25 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             {renderPaletteShape(type)}
           </button>
         ))}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "4px" }}>
+          {COLOR_OPTIONS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              onClick={() => setSelectedColor(color)}
+              aria-label={`色 ${color} を選択`}
+              style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "999px",
+                border: selectedColor === color ? "3px solid #1f2b52" : "1px solid #8a93b2",
+                background: color,
+                cursor: "pointer",
+                boxSizing: "border-box"
+              }}
+            />
+          ))}
+        </div>
         <button
           type="button"
           onClick={clearScreen}
