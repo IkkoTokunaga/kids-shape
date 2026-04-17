@@ -49,6 +49,13 @@ export default function ShapeStage() {
     });
   };
 
+  const rotateShape = (target: Konva.Shape) => {
+    target.to({
+      rotation: target.rotation() + 90,
+      duration: 0.15
+    });
+  };
+
   const addShape = (type: ShapeType) => {
     setShapes((currentShapes) => {
       const nextIndex = currentShapes.filter((shape) => shape.type === type).length;
@@ -169,6 +176,12 @@ export default function ShapeStage() {
                   onDragEnd={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
                   }}
+                  onClick={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                  }}
+                  onTap={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                  }}
                 />
               );
             }
@@ -190,6 +203,12 @@ export default function ShapeStage() {
                   onDragEnd={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
                   }}
+                  onClick={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                  }}
+                  onTap={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                  }}
                 />
               );
             }
@@ -198,15 +217,17 @@ export default function ShapeStage() {
               return (
                 <Line
                   key={shape.id}
+                  x={shape.x}
+                  y={shape.y}
                   points={[
-                    shape.x - 60,
-                    shape.y + 48,
-                    shape.x + 60,
-                    shape.y + 48,
-                    shape.x + 36,
-                    shape.y - 48,
-                    shape.x - 36,
-                    shape.y - 48
+                    -60,
+                    48,
+                    60,
+                    48,
+                    36,
+                    -48,
+                    -36,
+                    -48
                   ]}
                   fill={shape.color}
                   closed
@@ -216,6 +237,12 @@ export default function ShapeStage() {
                   }}
                   onDragEnd={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                  }}
+                  onClick={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                  }}
+                  onTap={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
                   }}
                 />
               );
@@ -225,15 +252,17 @@ export default function ShapeStage() {
               return (
                 <Line
                   key={shape.id}
+                  x={shape.x}
+                  y={shape.y}
                   points={[
-                    shape.x - 45,
-                    shape.y - 48,
-                    shape.x + 75,
-                    shape.y - 48,
-                    shape.x + 45,
-                    shape.y + 48,
-                    shape.x - 75,
-                    shape.y + 48
+                    -45,
+                    -48,
+                    75,
+                    -48,
+                    45,
+                    48,
+                    -75,
+                    48
                   ]}
                   fill={shape.color}
                   closed
@@ -243,6 +272,12 @@ export default function ShapeStage() {
                   }}
                   onDragEnd={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                  }}
+                  onClick={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                  }}
+                  onTap={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
                   }}
                 />
               );
@@ -252,15 +287,17 @@ export default function ShapeStage() {
               return (
                 <Line
                   key={shape.id}
+                  x={shape.x}
+                  y={shape.y}
                   points={[
-                    shape.x,
-                    shape.y - 66,
-                    shape.x + 58,
-                    shape.y,
-                    shape.x,
-                    shape.y + 66,
-                    shape.x - 58,
-                    shape.y
+                    0,
+                    -66,
+                    58,
+                    0,
+                    0,
+                    66,
+                    -58,
+                    0
                   ]}
                   fill={shape.color}
                   closed
@@ -270,6 +307,12 @@ export default function ShapeStage() {
                   }}
                   onDragEnd={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                  }}
+                  onClick={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                  }}
+                  onTap={(e) => {
+                    if (e.target instanceof Konva.Shape) rotateShape(e.target);
                   }}
                 />
               );
@@ -289,6 +332,12 @@ export default function ShapeStage() {
                 }}
                 onDragEnd={(e) => {
                   if (e.target instanceof Konva.Shape) animateDragging(e.target, false);
+                }}
+                onClick={(e) => {
+                  if (e.target instanceof Konva.Shape) rotateShape(e.target);
+                }}
+                onTap={(e) => {
+                  if (e.target instanceof Konva.Shape) rotateShape(e.target);
                 }}
               />
             );
