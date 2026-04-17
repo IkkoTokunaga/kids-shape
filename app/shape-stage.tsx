@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Konva from "konva";
 import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
 
@@ -184,6 +184,7 @@ type ShapeStageProps = {
 
 const BASE_STAGE_WIDTH = 900;
 const BASE_STAGE_HEIGHT = 500;
+const NEXT_QUESTION_DELAY_MS = 1300;
 
 export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
@@ -194,6 +195,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [isAllSolved, setIsAllSolved] = useState(false);
   const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
   const [viewportSize, setViewportSize] = useState({ width: 1280, height: 720 });
+  const [celebrationLevel, setCelebrationLevel] = useState<0 | 1 | 2>(0);
+  const [showCorrectPopup, setShowCorrectPopup] = useState(false);
   const isQuizMode = mode === "quiz";
   const currentQuestion = QUESTION_SETTINGS[questionIndex];
 
@@ -213,6 +216,68 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     window.addEventListener("resize", updateViewportSize);
     return () => window.removeEventListener("resize", updateViewportSize);
   }, []);
+
+  useEffect(() => {
+    if (!isQuizMode) return;
+    if (judgeResult !== "correct" && !isAllSolved) return;
+
+    const level: 1 | 2 = isAllSolved ? 2 : 1;
+    setCelebrationLevel(level);
+
+    const timeoutId = window.setTimeout(() => {
+      setCelebrationLevel(0);
+    }, level === 2 ? 1400 : 900);
+
+    // Browser policy may block autoplay; ignore failures.
+    void playSuccessSound(level).catch(() => undefined);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isQuizMode, judgeResult, isAllSolved]);
+
+  useEffect(() => {
+    // Ensure celebration effect does not remain on next question.
+    setCelebrationLevel(0);
+    setShowCorrectPopup(false);
+  }, [questionIndex]);
+
+  const playSuccessSound = async (level: 1 | 2) => {
+    const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+
+    const audioContext = new AudioCtx();
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    const now = audioContext.currentTime;
+    const notes = level === 2 ? [523.25, 659.25, 783.99, 1046.5] : [523.25, 659.25, 783.99];
+    let lastStopAt = now;
+
+    notes.forEach((frequency, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const startAt = now + index * 0.085;
+      const stopAt = startAt + 0.2;
+
+      oscillator.type = index === notes.length - 1 ? "triangle" : "sine";
+      oscillator.frequency.setValueAtTime(frequency, startAt);
+
+      gain.gain.setValueAtTime(0.0001, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.14, startAt + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.19);
+
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(startAt);
+      oscillator.stop(stopAt);
+      lastStopAt = Math.max(lastStopAt, stopAt);
+    });
+
+    const closeDelayMs = Math.max(0, Math.ceil((lastStopAt - audioContext.currentTime + 0.12) * 1000));
+    window.setTimeout(() => {
+      void audioContext.close().catch(() => undefined);
+    }, closeDelayMs);
+  };
 
   const animateDragging = (target: Konva.Shape, active: boolean) => {
     target.to({
@@ -439,12 +504,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         return;
       }
 
+      setShowCorrectPopup(true);
       window.setTimeout(() => {
+        setShowCorrectPopup(false);
         setQuestionIndex((current) => current + 1);
         setShapes([]);
         setMatchedTargetIndices([]);
         setJudgeResult("idle");
-      }, 700);
+      }, NEXT_QUESTION_DELAY_MS);
       return;
     }
 
@@ -558,7 +625,36 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 : `くぼみに合う形を置いて、OKを押して判定しよう（難易度 ${questionIndex + 1}/5・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
       </p>
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <div style={{ width: scaledStageWidth, height: scaledStageHeight }}>
+        <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px" }}>
+          {showCorrectPopup && (
+            <div className="correct-popup" role="status" aria-live="polite">
+              <div className="correct-popup-stars" aria-hidden>✨ 🌟 ✨</div>
+              <div className="correct-popup-main">せいかい！</div>
+              <div className="correct-popup-sub">つぎのもんだいへ しゅっぱつ！</div>
+            </div>
+          )}
+          {celebrationLevel > 0 && (
+            <div className={`celebration-overlay celebration-level-${celebrationLevel}`} aria-hidden>
+              <div className="celebration-flash" />
+              <div className="celebration-rays" />
+              <div className="celebration-confetti">
+                {Array.from({ length: celebrationLevel === 2 ? 28 : 18 }).map((_, index) => (
+                  <span
+                    key={`confetti-${index}`}
+                    className="celebration-piece"
+                    style={
+                      {
+                        left: `${(index * 31) % 100}%`,
+                        animationDelay: `${(index % 8) * 0.05}s`,
+                        "--drift": `${(index % 2 === 0 ? -1 : 1) * (12 + (index % 5) * 8)}px`,
+                        "--hue-shift": `${index * 11}deg`
+                      } as CSSProperties
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           <div
             style={{
               width: BASE_STAGE_WIDTH,
