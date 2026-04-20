@@ -883,33 +883,35 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
 
     const updatedMatchedIndices = [...matchedTargetIndices, ...nextMatchedIndices];
     setMatchedTargetIndices(updatedMatchedIndices);
-    setJudgeResult("correct");
 
     const isQuestionSolved = updatedMatchedIndices.length === currentQuestion.targets.length;
     const isLastQuestion = questionIndex === questionSettings.length - 1;
-    const soundLevel: 1 | 2 = isQuestionSolved && isLastQuestion ? 2 : 1;
-    void playSuccessSound(soundLevel).catch(() => undefined);
 
-    if (isQuestionSolved) {
-      if (isLastQuestion) {
-        setIsAllSolved(true);
-        return;
-      }
-
-      setShowCorrectPopup(true);
-      window.setTimeout(() => {
-        setShowCorrectPopup(false);
-        setQuestionIndex((current) => current + 1);
-        setShapes([]);
-        setMatchedTargetIndices([]);
-        setJudgeResult("idle");
-      }, NEXT_QUESTION_DELAY_MS);
+    if (!isQuestionSolved) {
+      // Partial match: lock the correctly placed pieces but keep the question going.
+      // Avoid the full "correct" celebration until every slot is filled.
+      playSnapSound();
+      setJudgeResult("idle");
       return;
     }
 
+    setJudgeResult("correct");
+    const soundLevel: 1 | 2 = isLastQuestion ? 2 : 1;
+    void playSuccessSound(soundLevel).catch(() => undefined);
+
+    if (isLastQuestion) {
+      setIsAllSolved(true);
+      return;
+    }
+
+    setShowCorrectPopup(true);
     window.setTimeout(() => {
+      setShowCorrectPopup(false);
+      setQuestionIndex((current) => current + 1);
+      setShapes([]);
+      setMatchedTargetIndices([]);
       setJudgeResult("idle");
-    }, 700);
+    }, NEXT_QUESTION_DELAY_MS);
   };
 
   const clearScreen = () => {
