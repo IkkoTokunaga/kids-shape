@@ -199,10 +199,10 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "circle", x: 540, y: 210, rotation: 0 },
-      { type: "square", x: 660, y: 210, rotation: 90 },
-      { type: "diamond", x: 780, y: 210, rotation: 90 },
-      { type: "triangle", x: 860, y: 210, rotation: 180 },
+      { type: "circle", x: 500, y: 210, rotation: 0 },
+      { type: "square", x: 620, y: 210, rotation: 90 },
+      { type: "diamond", x: 740, y: 210, rotation: 90 },
+      { type: "triangle", x: 820, y: 210, rotation: 180 },
       { type: "parallelogram", x: 600, y: 330, rotation: 180 },
       { type: "trapezoid", x: 760, y: 330, rotation: 180 }
     ],
@@ -213,13 +213,13 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "triangle", x: 520, y: 200, rotation: 180 },
-      { type: "square", x: 630, y: 200, rotation: 90 },
-      { type: "circle", x: 740, y: 200, rotation: 0 },
-      { type: "diamond", x: 850, y: 200, rotation: 90 },
+      { type: "triangle", x: 490, y: 200, rotation: 180 },
+      { type: "square", x: 600, y: 200, rotation: 90 },
+      { type: "circle", x: 710, y: 200, rotation: 0 },
+      { type: "diamond", x: 820, y: 200, rotation: 90 },
       { type: "parallelogram", x: 570, y: 330, rotation: 180 },
       { type: "trapezoid", x: 700, y: 330, rotation: 180 },
-      { type: "square", x: 830, y: 330, rotation: 90 }
+      { type: "square", x: 820, y: 330, rotation: 90 }
     ],
     snapDistance: 8,
     snapRotationTolerance: 8,
@@ -228,11 +228,11 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "circle", x: 500, y: 190, rotation: 0 },
-      { type: "triangle", x: 600, y: 190, rotation: 180 },
-      { type: "square", x: 700, y: 190, rotation: 90 },
-      { type: "diamond", x: 800, y: 190, rotation: 90 },
-      { type: "trapezoid", x: 880, y: 190, rotation: 180 },
+      { type: "circle", x: 420, y: 190, rotation: 0 },
+      { type: "triangle", x: 520, y: 190, rotation: 180 },
+      { type: "square", x: 620, y: 190, rotation: 90 },
+      { type: "diamond", x: 720, y: 190, rotation: 90 },
+      { type: "trapezoid", x: 820, y: 190, rotation: 180 },
       { type: "parallelogram", x: 540, y: 320, rotation: 180 },
       { type: "square", x: 660, y: 320, rotation: 90 },
       { type: "triangle", x: 780, y: 320, rotation: 180 }
