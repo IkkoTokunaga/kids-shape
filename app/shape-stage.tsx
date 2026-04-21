@@ -500,7 +500,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
-  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [matchedTargetIndices, setMatchedTargetIndices] = useState<number[]>([]);
   const [isAllSolved, setIsAllSolved] = useState(false);
@@ -534,6 +534,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const currentQuestion = questionSettings[questionIndex];
 
   const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
+  const selectedShapeData = selectedShapeId
+    ? shapes.find((shape) => shape.id === selectedShapeId) ?? null
+    : null;
+  const isShapeSelected = selectedShapeData !== null && !selectedShapeData.isLocked;
   const visualStageWidth = Math.max(200, stageHostWidth);
   const reservedHeight = isNarrowScreen ? (isQuizMode ? 280 : 240) : (isQuizMode ? 340 : 300);
   const maxStageVisualHeight = Math.max(200, viewportHeight - reservedHeight);
@@ -604,7 +608,18 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setMatchedTargetIndices([]);
     setIsAllSolved(false);
     setJudgeResult("idle");
+    setSelectedShapeId(null);
   }, [difficulty]);
+
+  useEffect(() => {
+    setSelectedShapeId(null);
+  }, [questionIndex]);
+
+  useEffect(() => {
+    if (!selectedShapeId) return;
+    const target = shapes.find((shape) => shape.id === selectedShapeId);
+    if (!target || target.isLocked) setSelectedShapeId(null);
+  }, [shapes, selectedShapeId]);
 
   useEffect(() => {
     const snapAudio = new Audio(SNAP_SOUND_FILE_URL);
@@ -924,17 +939,6 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     return <RegularPolygon key={key} x={target.x} y={target.y} sides={3} radius={75} {...sharedProps} />;
   };
 
-  const rotateShapeById = (id: string) => {
-    if (isQuizMode && judgeResult === "wrong") setJudgeResult("idle");
-
-    setShapes((currentShapes) =>
-      currentShapes.map((shape) => {
-        if (shape.id !== id || shape.isLocked) return shape;
-        return { ...shape, rotation: shape.rotation + 90 };
-      })
-    );
-  };
-
   const isShapeInSlot = (shape: ShapeItem) => {
     if (shape.isLocked) return true;
     if (!isQuizMode) return false;
@@ -942,14 +946,56 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   };
 
   const handleShapeTap = (id: string) => {
-    if (isDeleteMode) {
-      const target = shapes.find((shape) => shape.id === id);
-      if (!target || isShapeInSlot(target)) return;
-      setShapes((currentShapes) => currentShapes.filter((shape) => shape.id !== id));
-      setIsDeleteMode(false);
+    const target = shapes.find((shape) => shape.id === id);
+    if (!target || target.isLocked) return;
+    setSelectedShapeId((current) => (current === id ? null : id));
+  };
+
+  const rotateSelected = () => {
+    if (!selectedShapeId) return;
+    if (isQuizMode && judgeResult === "wrong") setJudgeResult("idle");
+
+    setShapes((currentShapes) =>
+      currentShapes.map((shape) => {
+        if (shape.id !== selectedShapeId || shape.isLocked) return shape;
+        return { ...shape, rotation: shape.rotation + 90 };
+      })
+    );
+  };
+
+  const deleteSelected = () => {
+    if (!selectedShapeId) return;
+    const target = shapes.find((shape) => shape.id === selectedShapeId);
+    if (!target || target.isLocked) {
+      setSelectedShapeId(null);
       return;
     }
-    rotateShapeById(id);
+    setShapes((currentShapes) => currentShapes.filter((shape) => shape.id !== selectedShapeId));
+    setSelectedShapeId(null);
+  };
+
+  const applyColorToSelected = (color: string) => {
+    if (!selectedShapeId) return false;
+    const target = shapes.find((shape) => shape.id === selectedShapeId);
+    if (!target || target.isLocked) return false;
+    if (isQuizMode && judgeResult === "wrong") setJudgeResult("idle");
+
+    setShapes((currentShapes) =>
+      currentShapes.map((shape) => (shape.id === selectedShapeId ? { ...shape, color } : shape))
+    );
+    return true;
+  };
+
+  const applyTypeToSelected = (type: ShapeType) => {
+    if (!selectedShapeId) return false;
+    const target = shapes.find((shape) => shape.id === selectedShapeId);
+    if (!target || target.isLocked) return false;
+    if (isQuizMode && judgeResult === "wrong") setJudgeResult("idle");
+
+    setShapes((currentShapes) =>
+      currentShapes.map((shape) => (shape.id === selectedShapeId ? { ...shape, type } : shape))
+    );
+    return true;
   };
 
   const handleDragEndById = (id: string, x: number, y: number) => {
@@ -1056,7 +1102,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
 
   const clearScreen = () => {
     setShapes([]);
-    setIsDeleteMode(false);
+    setSelectedShapeId(null);
     if (isQuizMode && !isAllSolved) {
       setMatchedTargetIndices([]);
       setJudgeResult("idle");
@@ -1089,34 +1135,42 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             {`第${questionIndex + 1}問`}
           </span>
         )}
-        {PALETTE_SHAPES.map((type) => (
-          <button
-            key={type}
-            type="button"
-            onClick={() => {
-              setSelectedShape(type);
-              const colorToUse =
-                selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
-              addShape(type, colorToUse);
-            }}
-            aria-label={`${type} を選択`}
-            style={{
-              border: selectedShape === type ? "2px solid #5470ff" : "1px solid #c6cce0",
-              background: "#ffffff",
-              borderRadius: "12px",
-              padding: isNarrowScreen ? "6px" : "10px",
-              fontSize: "0.9rem",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: isNarrowScreen ? "38px" : "48px",
-              height: isNarrowScreen ? "38px" : "48px"
-            }}
-          >
-            {renderPaletteShape(type)}
-          </button>
-        ))}
+        {PALETTE_SHAPES.map((type) => {
+          const isActiveForChange = isShapeSelected && selectedShapeData?.type === type;
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => {
+                if (applyTypeToSelected(type)) return;
+                setSelectedShape(type);
+                const colorToUse =
+                  selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+                addShape(type, colorToUse);
+              }}
+              aria-label={isShapeSelected ? `選択中の形を ${type} に変更` : `${type} を追加`}
+              style={{
+                border: isActiveForChange
+                  ? "2px solid #3853ff"
+                  : selectedShape === type && !isShapeSelected
+                  ? "2px solid #5470ff"
+                  : "1px solid #c6cce0",
+                background: "#ffffff",
+                borderRadius: "12px",
+                padding: isNarrowScreen ? "6px" : "10px",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: isNarrowScreen ? "38px" : "48px",
+                height: isNarrowScreen ? "38px" : "48px"
+              }}
+            >
+              {renderPaletteShape(type)}
+            </button>
+          );
+        })}
         <div
           style={{
             display: "flex",
@@ -1126,41 +1180,101 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             flexWrap: "wrap"
           }}
         >
-          {COLOR_OPTIONS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              onClick={() => setSelectedColor((current) => (current === color ? null : color))}
-              aria-label={`色 ${color} を選択`}
-              style={{
-                width: isNarrowScreen ? "24px" : "28px",
-                height: isNarrowScreen ? "24px" : "28px",
-                borderRadius: "999px",
-                border: selectedColor === color ? "3px solid #1f2b52" : "1px solid #8a93b2",
-                background: color,
-                cursor: "pointer",
-                boxSizing: "border-box",
-                padding: 0
-              }}
-            />
-          ))}
+          {COLOR_OPTIONS.map((color) => {
+            const isActiveForChange = isShapeSelected && selectedShapeData?.color === color;
+            return (
+              <button
+                key={color}
+                type="button"
+                onClick={() => {
+                  if (applyColorToSelected(color)) return;
+                  setSelectedColor((current) => (current === color ? null : color));
+                }}
+                aria-label={isShapeSelected ? `選択中の形の色を変更` : `色 ${color} を選択`}
+                style={{
+                  width: isNarrowScreen ? "24px" : "28px",
+                  height: isNarrowScreen ? "24px" : "28px",
+                  borderRadius: "999px",
+                  border: isActiveForChange
+                    ? "3px solid #3853ff"
+                    : selectedColor === color && !isShapeSelected
+                    ? "3px solid #1f2b52"
+                    : "1px solid #8a93b2",
+                  background: color,
+                  cursor: "pointer",
+                  boxSizing: "border-box",
+                  padding: 0
+                }}
+              />
+            );
+          })}
         </div>
         <button
           type="button"
-          onClick={() => setIsDeleteMode((current) => !current)}
-          aria-pressed={isDeleteMode}
+          onClick={rotateSelected}
+          disabled={!isShapeSelected}
+          aria-label="選択中の形を回転"
+          title="回転"
           style={{
-            border: isDeleteMode ? "2px solid #cc3344" : "1px solid #c6cce0",
-            background: isDeleteMode ? "#ffe3e6" : "#ffffff",
-            color: isDeleteMode ? "#a52033" : "#36405f",
+            border: "1px solid #c6cce0",
+            background: isShapeSelected ? "#e8efff" : "#f2f4fb",
+            color: isShapeSelected ? "#1f2b52" : "#a3a9bf",
             borderRadius: "10px",
-            padding: isNarrowScreen ? "6px 10px" : "10px 12px",
+            padding: isNarrowScreen ? "6px 8px" : "8px 10px",
             fontWeight: 700,
             fontSize: isNarrowScreen ? "0.8rem" : "0.95rem",
-            cursor: "pointer"
+            cursor: isShapeSelected ? "pointer" : "not-allowed",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px"
           }}
         >
-          {isDeleteMode ? "削除モード中" : "削除"}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M21 12a9 9 0 1 1-3.2-6.88"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <path d="M21 3v6h-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+          {!isNarrowScreen && <span>回転</span>}
+        </button>
+        <button
+          type="button"
+          onClick={deleteSelected}
+          disabled={!isShapeSelected}
+          aria-label="選択中の形を削除"
+          title="削除"
+          style={{
+            border: "1px solid #c6cce0",
+            background: isShapeSelected ? "#ffe3e6" : "#f2f4fb",
+            color: isShapeSelected ? "#a52033" : "#a3a9bf",
+            borderRadius: "10px",
+            padding: isNarrowScreen ? "6px 8px" : "8px 10px",
+            fontWeight: 700,
+            fontSize: isNarrowScreen ? "0.8rem" : "0.95rem",
+            cursor: isShapeSelected ? "pointer" : "not-allowed",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px"
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M4 7h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            <path d="M10 7V4h4v3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <path
+              d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <path d="M10 11v7M14 11v7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          {!isNarrowScreen && <span>削除</span>}
         </button>
         <button
           type="button"
@@ -1183,15 +1297,23 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         style={{
           margin: 0,
           minHeight: "1.6em",
-          color: !isQuizMode ? "#44506b" : judgeResult === "correct" ? "#2f9e44" : judgeResult === "wrong" ? "#cc3344" : "#44506b",
+          color: isShapeSelected
+            ? "#3853ff"
+            : !isQuizMode
+              ? "#44506b"
+              : judgeResult === "correct"
+                ? "#2f9e44"
+                : judgeResult === "wrong"
+                  ? "#cc3344"
+                  : "#44506b",
           fontWeight: 700,
           fontSize: isNarrowScreen ? "0.85rem" : "1rem",
           lineHeight: 1.4,
           wordBreak: "break-word"
         }}
       >
-        {isDeleteMode
-          ? "削除モード: 消したい形をタップしてね（くぼみにはまった形は消せません）"
+        {isShapeSelected
+          ? "形をえらんだよ！ 回転・削除・色・形を えらぼう（もういちどタップで解除）"
           : !isQuizMode
           ? "好きな形を置いて、ドラッグや回転で自由に遊ぼう"
           : isAllSolved
@@ -1238,6 +1360,12 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             height={scaledStageHeight}
             scaleX={stageScale}
             scaleY={stageScale}
+            onMouseDown={(e) => {
+              if (e.target === e.target.getStage()) setSelectedShapeId(null);
+            }}
+            onTouchStart={(e) => {
+              if (e.target === e.target.getStage()) setSelectedShapeId(null);
+            }}
           >
             <Layer>
                 {isQuizMode &&
@@ -1245,12 +1373,20 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                     renderTargetSlot(target, matchedTargetIndices.includes(idx), `target-slot-${idx}`)
                   )}
                 {shapes.map((shape) => {
-            const inSlot = isShapeInSlot(shape);
-            const highlightAsDeletable = isDeleteMode && !inSlot;
-            const shapeStroke = highlightAsDeletable ? "#cc3344" : SHAPE_OUTLINE_STROKE;
-            const shapeStrokeWidth = highlightAsDeletable ? 3 : SHAPE_OUTLINE_STROKE_WIDTH;
-            const shapeOpacity = isDeleteMode && inSlot ? 0.55 : 1;
-            const isDraggable = !shape.isLocked && !isDeleteMode;
+            const isSelected = shape.id === selectedShapeId && !shape.isLocked;
+            const shapeStroke = isSelected ? "#3853ff" : SHAPE_OUTLINE_STROKE;
+            const shapeStrokeWidth = isSelected ? 4 : SHAPE_OUTLINE_STROKE_WIDTH;
+            const shapeOpacity = 1;
+            const isDraggable = !shape.isLocked;
+            const selectionShadow = isSelected
+              ? {
+                  shadowColor: "#3853ff",
+                  shadowBlur: 14,
+                  shadowOpacity: 0.55,
+                  shadowOffsetX: 0,
+                  shadowOffsetY: 0
+                }
+              : {};
             if (shape.type === "circle") {
               return (
                 <Circle
@@ -1263,9 +1399,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
+                    setSelectedShapeId(null);
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
@@ -1296,9 +1434,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
+                    setSelectedShapeId(null);
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
@@ -1335,9 +1475,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
+                    setSelectedShapeId(null);
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
@@ -1374,9 +1516,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
+                    setSelectedShapeId(null);
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
@@ -1413,9 +1557,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
+                    setSelectedShapeId(null);
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                   }}
                   onDragEnd={(e) => {
@@ -1442,9 +1588,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 stroke={shapeStroke}
                 strokeWidth={shapeStrokeWidth}
                 opacity={shapeOpacity}
+                {...selectionShadow}
                 draggable={isDraggable}
                 dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                 onDragStart={(e) => {
+                  setSelectedShapeId(null);
                   if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
                 }}
                 onDragEnd={(e) => {
