@@ -497,8 +497,8 @@ const getShapeHalfExtents = (type: ShapeType, rotation: number) => {
 };
 
 export default function ShapeStage({ mode }: ShapeStageProps) {
-  const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
-  const [selectedColor, setSelectedColor] = useState<string>(SHAPE_COLORS.circle);
+  const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -1095,7 +1095,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             type="button"
             onClick={() => {
               setSelectedShape(type);
-              addShape(type, selectedColor);
+              const colorToUse =
+                selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+              addShape(type, colorToUse);
             }}
             aria-label={`${type} を選択`}
             style={{
@@ -1128,7 +1130,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             <button
               key={color}
               type="button"
-              onClick={() => setSelectedColor(color)}
+              onClick={() => setSelectedColor((current) => (current === color ? null : color))}
               aria-label={`色 ${color} を選択`}
               style={{
                 width: isNarrowScreen ? "24px" : "28px",
