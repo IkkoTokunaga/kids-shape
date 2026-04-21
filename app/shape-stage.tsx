@@ -497,8 +497,9 @@ const getShapeHalfExtents = (type: ShapeType, rotation: number) => {
 };
 
 export default function ShapeStage({ mode }: ShapeStageProps) {
-  const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [recentlyAddedShape, setRecentlyAddedShape] = useState<ShapeType | null>(null);
+  const recentlyAddedShapeTimerRef = useRef<number | null>(null);
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -620,6 +621,15 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     const target = shapes.find((shape) => shape.id === selectedShapeId);
     if (!target || target.isLocked) setSelectedShapeId(null);
   }, [shapes, selectedShapeId]);
+
+  useEffect(() => {
+    return () => {
+      if (recentlyAddedShapeTimerRef.current !== null) {
+        window.clearTimeout(recentlyAddedShapeTimerRef.current);
+        recentlyAddedShapeTimerRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const snapAudio = new Audio(SNAP_SOUND_FILE_URL);
@@ -799,6 +809,17 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     };
   };
 
+  const flashRecentlyAddedShape = (type: ShapeType) => {
+    if (recentlyAddedShapeTimerRef.current !== null) {
+      window.clearTimeout(recentlyAddedShapeTimerRef.current);
+    }
+    setRecentlyAddedShape(type);
+    recentlyAddedShapeTimerRef.current = window.setTimeout(() => {
+      setRecentlyAddedShape(null);
+      recentlyAddedShapeTimerRef.current = null;
+    }, 400);
+  };
+
   const addShape = (type: ShapeType, color: string) => {
     setShapes((currentShapes) => {
       const nextIndex = currentShapes.filter((shape) => shape.type === type).length;
@@ -812,6 +833,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         color
       };
 
+      setSelectedShapeId(newShape.id);
       return [...currentShapes, newShape];
     });
   };
@@ -1143,16 +1165,16 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               type="button"
               onClick={() => {
                 if (applyTypeToSelected(type)) return;
-                setSelectedShape(type);
                 const colorToUse =
                   selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
                 addShape(type, colorToUse);
+                flashRecentlyAddedShape(type);
               }}
               aria-label={isShapeSelected ? `選択中の形を ${type} に変更` : `${type} を追加`}
               style={{
                 border: isActiveForChange
                   ? "2px solid #3853ff"
-                  : selectedShape === type && !isShapeSelected
+                  : recentlyAddedShape === type && !isShapeSelected
                   ? "2px solid #5470ff"
                   : "1px solid #c6cce0",
                 background: "#ffffff",
