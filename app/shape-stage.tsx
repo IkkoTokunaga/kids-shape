@@ -500,6 +500,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedShape, setSelectedShape] = useState<ShapeType>("circle");
   const [selectedColor, setSelectedColor] = useState<string>(SHAPE_COLORS.circle);
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [matchedTargetIndices, setMatchedTargetIndices] = useState<number[]>([]);
   const [isAllSolved, setIsAllSolved] = useState(false);
@@ -934,6 +935,23 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     );
   };
 
+  const isShapeInSlot = (shape: ShapeItem) => {
+    if (shape.isLocked) return true;
+    if (!isQuizMode) return false;
+    return unmatchedTargets.some((target) => isCloseToSlot(shape, target, currentQuestion));
+  };
+
+  const handleShapeTap = (id: string) => {
+    if (isDeleteMode) {
+      const target = shapes.find((shape) => shape.id === id);
+      if (!target || isShapeInSlot(target)) return;
+      setShapes((currentShapes) => currentShapes.filter((shape) => shape.id !== id));
+      setIsDeleteMode(false);
+      return;
+    }
+    rotateShapeById(id);
+  };
+
   const handleDragEndById = (id: string, x: number, y: number) => {
     if (isQuizMode && judgeResult === "wrong") setJudgeResult("idle");
 
@@ -1038,6 +1056,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
 
   const clearScreen = () => {
     setShapes([]);
+    setIsDeleteMode(false);
     if (isQuizMode && !isAllSolved) {
       setMatchedTargetIndices([]);
       setJudgeResult("idle");
@@ -1126,6 +1145,23 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         </div>
         <button
           type="button"
+          onClick={() => setIsDeleteMode((current) => !current)}
+          aria-pressed={isDeleteMode}
+          style={{
+            border: isDeleteMode ? "2px solid #cc3344" : "1px solid #c6cce0",
+            background: isDeleteMode ? "#ffe3e6" : "#ffffff",
+            color: isDeleteMode ? "#a52033" : "#36405f",
+            borderRadius: "10px",
+            padding: isNarrowScreen ? "6px 10px" : "10px 12px",
+            fontWeight: 700,
+            fontSize: isNarrowScreen ? "0.8rem" : "0.95rem",
+            cursor: "pointer"
+          }}
+        >
+          {isDeleteMode ? "削除モード中" : "削除"}
+        </button>
+        <button
+          type="button"
           onClick={clearScreen}
           style={{
             border: "1px solid #c6cce0",
@@ -1152,7 +1188,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
           wordBreak: "break-word"
         }}
       >
-        {!isQuizMode
+        {isDeleteMode
+          ? "削除モード: 消したい形をタップしてね（くぼみにはまった形は消せません）"
+          : !isQuizMode
           ? "好きな形を置いて、ドラッグや回転で自由に遊ぼう"
           : isAllSolved
             ? `${questionSettings.length}問クリア！ぜんぶせいかい！すごい 🎊`
@@ -1205,6 +1243,12 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                     renderTargetSlot(target, matchedTargetIndices.includes(idx), `target-slot-${idx}`)
                   )}
                 {shapes.map((shape) => {
+            const inSlot = isShapeInSlot(shape);
+            const highlightAsDeletable = isDeleteMode && !inSlot;
+            const shapeStroke = highlightAsDeletable ? "#cc3344" : SHAPE_OUTLINE_STROKE;
+            const shapeStrokeWidth = highlightAsDeletable ? 3 : SHAPE_OUTLINE_STROKE_WIDTH;
+            const shapeOpacity = isDeleteMode && inSlot ? 0.55 : 1;
+            const isDraggable = !shape.isLocked && !isDeleteMode;
             if (shape.type === "circle") {
               return (
                 <Circle
@@ -1214,9 +1258,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   radius={60}
                   rotation={shape.rotation}
                   fill={shape.color}
-                  stroke={SHAPE_OUTLINE_STROKE}
-                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
-                  draggable={!shape.isLocked}
+                  stroke={shapeStroke}
+                  strokeWidth={shapeStrokeWidth}
+                  opacity={shapeOpacity}
+                  draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
@@ -1227,8 +1272,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                       handleDragEndById(shape.id, e.target.x(), e.target.y());
                     }
                   }}
-                  onClick={() => rotateShapeById(shape.id)}
-                  onTap={() => rotateShapeById(shape.id)}
+                  onClick={() => handleShapeTap(shape.id)}
+                  onTap={() => handleShapeTap(shape.id)}
                 />
               );
             }
@@ -1246,9 +1291,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   cornerRadius={10}
                   fill={shape.color}
-                  stroke={SHAPE_OUTLINE_STROKE}
-                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
-                  draggable={!shape.isLocked}
+                  stroke={shapeStroke}
+                  strokeWidth={shapeStrokeWidth}
+                  opacity={shapeOpacity}
+                  draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
@@ -1259,8 +1305,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                       handleDragEndById(shape.id, e.target.x(), e.target.y());
                     }
                   }}
-                  onClick={() => rotateShapeById(shape.id)}
-                  onTap={() => rotateShapeById(shape.id)}
+                  onClick={() => handleShapeTap(shape.id)}
+                  onTap={() => handleShapeTap(shape.id)}
                 />
               );
             }
@@ -1284,9 +1330,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
-                  stroke={SHAPE_OUTLINE_STROKE}
-                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
-                  draggable={!shape.isLocked}
+                  stroke={shapeStroke}
+                  strokeWidth={shapeStrokeWidth}
+                  opacity={shapeOpacity}
+                  draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
@@ -1297,8 +1344,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                       handleDragEndById(shape.id, e.target.x(), e.target.y());
                     }
                   }}
-                  onClick={() => rotateShapeById(shape.id)}
-                  onTap={() => rotateShapeById(shape.id)}
+                  onClick={() => handleShapeTap(shape.id)}
+                  onTap={() => handleShapeTap(shape.id)}
                 />
               );
             }
@@ -1322,9 +1369,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
-                  stroke={SHAPE_OUTLINE_STROKE}
-                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
-                  draggable={!shape.isLocked}
+                  stroke={shapeStroke}
+                  strokeWidth={shapeStrokeWidth}
+                  opacity={shapeOpacity}
+                  draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
@@ -1335,8 +1383,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                       handleDragEndById(shape.id, e.target.x(), e.target.y());
                     }
                   }}
-                  onClick={() => rotateShapeById(shape.id)}
-                  onTap={() => rotateShapeById(shape.id)}
+                  onClick={() => handleShapeTap(shape.id)}
+                  onTap={() => handleShapeTap(shape.id)}
                 />
               );
             }
@@ -1360,9 +1408,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
-                  stroke={SHAPE_OUTLINE_STROKE}
-                  strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
-                  draggable={!shape.isLocked}
+                  stroke={shapeStroke}
+                  strokeWidth={shapeStrokeWidth}
+                  opacity={shapeOpacity}
+                  draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                   onDragStart={(e) => {
                     if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
@@ -1373,8 +1422,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                       handleDragEndById(shape.id, e.target.x(), e.target.y());
                     }
                   }}
-                  onClick={() => rotateShapeById(shape.id)}
-                  onTap={() => rotateShapeById(shape.id)}
+                  onClick={() => handleShapeTap(shape.id)}
+                  onTap={() => handleShapeTap(shape.id)}
                 />
               );
             }
@@ -1388,9 +1437,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 radius={75}
                 rotation={shape.rotation}
                 fill={shape.color}
-                stroke={SHAPE_OUTLINE_STROKE}
-                strokeWidth={SHAPE_OUTLINE_STROKE_WIDTH}
-                draggable={!shape.isLocked}
+                stroke={shapeStroke}
+                strokeWidth={shapeStrokeWidth}
+                opacity={shapeOpacity}
+                draggable={isDraggable}
                 dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
                 onDragStart={(e) => {
                   if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
@@ -1401,8 +1451,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                     handleDragEndById(shape.id, e.target.x(), e.target.y());
                   }
                 }}
-                onClick={() => rotateShapeById(shape.id)}
-                onTap={() => rotateShapeById(shape.id)}
+                onClick={() => handleShapeTap(shape.id)}
+                onTap={() => handleShapeTap(shape.id)}
               />
             );
                 })}
