@@ -460,6 +460,10 @@ const BASE_STAGE_WIDTH = 900;
 const BASE_STAGE_HEIGHT = 500;
 const NEXT_QUESTION_DELAY_MS = 1300;
 const EDGE_SAFE_PADDING = 10;
+// スマホ表示ではタップしやすいように図形とくぼみをすこし大きく見せる。
+// 既存のターゲット座標が可動領域からはみ出さない限界まで拡大（特に HARD Q4 の diamond rot90 x=820 がタイト）。
+const NARROW_SHAPE_SCALE = 1.2;
+const NARROW_EDGE_SAFE_PADDING = 0;
 const SNAP_SOUND_FILE_URL = "/sounds/peta.mp3";
 const SHAPE_OUTLINE_STROKE = "rgba(27, 40, 83, 0.28)";
 const SHAPE_OUTLINE_STROKE_WIDTH = 1.5;
@@ -511,13 +515,20 @@ const getRotatedHalfExtents = (points: [number, number][], rotation: number) => 
   return { halfWidth: maxAbsX, halfHeight: maxAbsY };
 };
 
-const getShapeHalfExtents = (type: ShapeType, rotation: number) => {
-  if (type === "circle") return { halfWidth: 60, halfHeight: 60 };
-  if (type === "square") return getRotatedHalfExtents(SQUARE_POINTS, rotation);
-  if (type === "triangle") return getRotatedHalfExtents(TRIANGLE_POINTS, rotation);
-  if (type === "trapezoid") return getRotatedHalfExtents(TRAPEZOID_POINTS, rotation);
-  if (type === "parallelogram") return getRotatedHalfExtents(PARALLELOGRAM_POINTS, rotation);
-  return getRotatedHalfExtents(DIAMOND_POINTS, rotation);
+const getShapeHalfExtents = (type: ShapeType, rotation: number, scale = 1) => {
+  const base =
+    type === "circle"
+      ? { halfWidth: 60, halfHeight: 60 }
+      : type === "square"
+        ? getRotatedHalfExtents(SQUARE_POINTS, rotation)
+        : type === "triangle"
+          ? getRotatedHalfExtents(TRIANGLE_POINTS, rotation)
+          : type === "trapezoid"
+            ? getRotatedHalfExtents(TRAPEZOID_POINTS, rotation)
+            : type === "parallelogram"
+              ? getRotatedHalfExtents(PARALLELOGRAM_POINTS, rotation)
+              : getRotatedHalfExtents(DIAMOND_POINTS, rotation);
+  return { halfWidth: base.halfWidth * scale, halfHeight: base.halfHeight * scale };
 };
 
 export default function ShapeStage({ mode }: ShapeStageProps) {
@@ -557,6 +568,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   };
   const questionSettings = questionSettingsByDifficulty[difficulty];
   const currentQuestion = questionSettings[questionIndex];
+  const shapeScale = isNarrowScreen ? NARROW_SHAPE_SCALE : 1;
+  const edgeSafePadding = isNarrowScreen ? NARROW_EDGE_SAFE_PADDING : EDGE_SAFE_PADDING;
+  // 図形とくぼみを拡大しても同じ相対感覚で吸着/判定できるよう距離系だけスケールする。
+  const scaledCurrentQuestion: QuestionSetting = {
+    ...currentQuestion,
+    snapDistance: currentQuestion.snapDistance * shapeScale,
+    judgeDistance: currentQuestion.judgeDistance * shapeScale
+  };
 
   const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
   const selectedShapeData = selectedShapeId
@@ -564,7 +583,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     : null;
   const isShapeSelected = selectedShapeData !== null && !selectedShapeData.isLocked;
   const visualStageWidth = Math.max(200, stageHostWidth);
-  const reservedHeight = isNarrowScreen ? (isQuizMode ? 280 : 240) : (isQuizMode ? 340 : 300);
+  const reservedHeight = isNarrowScreen ? (isQuizMode ? 400 : 350) : (isQuizMode ? 340 : 300);
   const maxStageVisualHeight = Math.max(200, viewportHeight - reservedHeight);
   const widthScale = visualStageWidth / BASE_STAGE_WIDTH;
   const heightScale = maxStageVisualHeight / BASE_STAGE_HEIGHT;
@@ -799,8 +818,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       void getOrCreateAudio().catch(() => undefined);
     }
     target.to({
-      scaleX: active ? 1.04 : 1,
-      scaleY: active ? 1.04 : 1,
+      scaleX: active ? shapeScale * 1.04 : shapeScale,
+      scaleY: active ? shapeScale * 1.04 : shapeScale,
       shadowColor: "rgba(0, 0, 0, 0.35)",
       shadowBlur: active ? 12 : 0,
       shadowOffsetX: active ? 4 : 0,
@@ -818,11 +837,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     const internalX = absPos.x / safeScale;
     const internalY = absPos.y / safeScale;
 
-    const { halfWidth, halfHeight } = getShapeHalfExtents(shape.type, shape.rotation);
-    const minX = halfWidth + EDGE_SAFE_PADDING;
-    const maxX = boundedStageWidth - halfWidth - EDGE_SAFE_PADDING;
-    const minY = halfHeight + EDGE_SAFE_PADDING;
-    const maxY = boundedStageHeight - halfHeight - EDGE_SAFE_PADDING;
+    const { halfWidth, halfHeight } = getShapeHalfExtents(shape.type, shape.rotation, shapeScale);
+    const minX = halfWidth + edgeSafePadding;
+    const maxX = boundedStageWidth - halfWidth - edgeSafePadding;
+    const minY = halfHeight + edgeSafePadding;
+    const maxY = boundedStageHeight - halfHeight - edgeSafePadding;
 
     const clampedInternalX = Math.min(maxX, Math.max(minX, internalX));
     const clampedInternalY = Math.min(maxY, Math.max(minY, internalY));
@@ -862,16 +881,19 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     });
   };
 
+  const paletteIconSize = isNarrowScreen ? 32 : 24;
+
   const renderPaletteShape = (type: ShapeType) => {
     const color = SHAPE_COLORS[type];
+    const iconSize = `${paletteIconSize}px`;
 
     if (type === "circle") {
       return (
         <span
           aria-hidden
           style={{
-            width: "24px",
-            height: "24px",
+            width: iconSize,
+            height: iconSize,
             borderRadius: "999px",
             background: color,
             display: "inline-block"
@@ -885,8 +907,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         <span
           aria-hidden
           style={{
-            width: "24px",
-            height: "24px",
+            width: iconSize,
+            height: iconSize,
             borderRadius: "4px",
             background: color,
             display: "inline-block"
@@ -896,18 +918,18 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     }
 
     if (type === "trapezoid") {
-      return <svg width="24" height="24" viewBox="0 0 100 100" aria-hidden><polygon points="20,76 80,76 66,30 34,30" fill={color} /></svg>;
+      return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="20,76 80,76 66,30 34,30" fill={color} /></svg>;
     }
 
     if (type === "parallelogram") {
-      return <svg width="24" height="24" viewBox="0 0 100 100" aria-hidden><polygon points="30,24 84,24 70,76 16,76" fill={color} /></svg>;
+      return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="30,24 84,24 70,76 16,76" fill={color} /></svg>;
     }
 
     if (type === "diamond") {
-      return <svg width="24" height="24" viewBox="0 0 100 100" aria-hidden><polygon points="50,14 84,50 50,86 16,50" fill={color} /></svg>;
+      return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="50,14 84,50 50,86 16,50" fill={color} /></svg>;
     }
 
-    return <svg width="24" height="24" viewBox="0 0 100 100" aria-hidden><polygon points="50,16 84,76 16,76" fill={color} /></svg>;
+    return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="50,16 84,76 16,76" fill={color} /></svg>;
   };
 
   const renderTargetSlot = (target: TargetSlot, isMatched: boolean, key: string) => {
@@ -920,7 +942,10 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       shadowOffsetX: 0,
       shadowOffsetY: 3,
       listening: false,
-      rotation: target.rotation ?? 0
+      rotation: target.rotation ?? 0,
+      scaleX: shapeScale,
+      scaleY: shapeScale,
+      strokeScaleEnabled: false
     };
 
     if (target.type === "circle") {
@@ -988,7 +1013,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const isShapeInSlot = (shape: ShapeItem) => {
     if (shape.isLocked) return true;
     if (!isQuizMode) return false;
-    return unmatchedTargets.some((target) => isCloseToSlot(shape, target, currentQuestion));
+    return unmatchedTargets.some((target) => isCloseToSlot(shape, target, scaledCurrentQuestion));
   };
 
   const handleShapeTap = (id: string) => {
@@ -1053,7 +1078,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
         const movedShape = { ...shape, x, y };
 
         if (isQuizMode) {
-          const nearestTarget = findNearestSlot(movedShape, unmatchedTargets, currentQuestion);
+          const nearestTarget = findNearestSlot(movedShape, unmatchedTargets, scaledCurrentQuestion);
           if (!nearestTarget) return movedShape;
           playSnapSound();
 
@@ -1082,7 +1107,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       const matchedShape = shapes.find((shape) => {
         if (shape.isLocked) return false;
         if (usedShapeIds.has(shape.id)) return false;
-        return isCloseToSlot(shape, target, currentQuestion);
+        return isCloseToSlot(shape, target, scaledCurrentQuestion);
       });
 
       if (!matchedShape) return;
@@ -1099,7 +1124,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       currentShapes.map((shape) => {
         const matchedEntry = currentQuestion.targets.find((target, targetIndex) => {
           if (!nextMatchedIndices.includes(targetIndex)) return false;
-          return isCloseToSlot(shape, target, currentQuestion);
+          return isCloseToSlot(shape, target, scaledCurrentQuestion);
         });
         if (!matchedEntry || shape.isLocked) return shape;
 
@@ -1181,6 +1206,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             {`第${questionIndex + 1}問`}
           </span>
         )}
+        {isNarrowScreen && isQuizMode && (
+          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
+        )}
         {PALETTE_SHAPES.map((type) => {
           const isActiveForChange = isShapeSelected && selectedShapeData?.type === type;
           return (
@@ -1203,20 +1231,23 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   : "1px solid #c6cce0",
                 background: "#ffffff",
                 borderRadius: "12px",
-                padding: isNarrowScreen ? "6px" : "10px",
+                padding: isNarrowScreen ? "8px" : "10px",
                 fontSize: "0.9rem",
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: isNarrowScreen ? "38px" : "48px",
-                height: isNarrowScreen ? "38px" : "48px"
+                width: isNarrowScreen ? "54px" : "48px",
+                height: isNarrowScreen ? "54px" : "48px"
               }}
             >
               {renderPaletteShape(type)}
             </button>
           );
         })}
+        {isNarrowScreen && (
+          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
+        )}
         <div
           style={{
             display: "flex",
@@ -1238,8 +1269,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 }}
                 aria-label={isShapeSelected ? `選択中の形の色を変更` : `色 ${color} を選択`}
                 style={{
-                  width: isNarrowScreen ? "24px" : "28px",
-                  height: isNarrowScreen ? "24px" : "28px",
+                  width: isNarrowScreen ? "38px" : "28px",
+                  height: isNarrowScreen ? "38px" : "28px",
                   borderRadius: "999px",
                   border: isActiveForChange
                     ? "3px solid #3853ff"
@@ -1255,6 +1286,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             );
           })}
         </div>
+        {isNarrowScreen && (
+          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
+        )}
         <button
           type="button"
           onClick={rotateSelected}
@@ -1266,16 +1300,16 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             background: isShapeSelected ? "#e8efff" : "#f2f4fb",
             color: isShapeSelected ? "#1f2b52" : "#a3a9bf",
             borderRadius: "10px",
-            padding: isNarrowScreen ? "6px 8px" : "8px 10px",
+            padding: isNarrowScreen ? "12px 14px" : "8px 10px",
             fontWeight: 700,
-            fontSize: isNarrowScreen ? "0.8rem" : "0.95rem",
+            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
             cursor: isShapeSelected ? "pointer" : "not-allowed",
             display: "inline-flex",
             alignItems: "center",
             gap: "4px"
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width={isNarrowScreen ? 26 : 20} height={isNarrowScreen ? 26 : 20} viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
               d="M21 12a9 9 0 1 1-3.2-6.88"
               stroke="currentColor"
@@ -1298,16 +1332,16 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             background: isShapeSelected ? "#ffe3e6" : "#f2f4fb",
             color: isShapeSelected ? "#a52033" : "#a3a9bf",
             borderRadius: "10px",
-            padding: isNarrowScreen ? "6px 8px" : "8px 10px",
+            padding: isNarrowScreen ? "12px 14px" : "8px 10px",
             fontWeight: 700,
-            fontSize: isNarrowScreen ? "0.8rem" : "0.95rem",
+            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
             cursor: isShapeSelected ? "pointer" : "not-allowed",
             display: "inline-flex",
             alignItems: "center",
             gap: "4px"
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width={isNarrowScreen ? 26 : 20} height={isNarrowScreen ? 26 : 20} viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M4 7h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
             <path d="M10 7V4h4v3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             <path
@@ -1330,9 +1364,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             background: "#ffffff",
             color: "#36405f",
             borderRadius: "10px",
-            padding: isNarrowScreen ? "6px 10px" : "10px 12px",
+            padding: isNarrowScreen ? "12px 14px" : "10px 12px",
             fontWeight: 700,
-            fontSize: isNarrowScreen ? "0.8rem" : "0.95rem",
+            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
             cursor: "pointer"
           }}
         >
@@ -1424,6 +1458,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
             const shapeStrokeWidth = isSelected ? 4 : SHAPE_OUTLINE_STROKE_WIDTH;
             const shapeOpacity = 1;
             const isDraggable = !shape.isLocked;
+            const scaleProps = {
+              scaleX: shapeScale,
+              scaleY: shapeScale,
+              strokeScaleEnabled: false
+            };
             const selectionShadow = isSelected
               ? {
                   shadowColor: "#3853ff",
@@ -1445,6 +1484,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...scaleProps}
                   {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
@@ -1480,6 +1520,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...scaleProps}
                   {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
@@ -1521,6 +1562,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...scaleProps}
                   {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
@@ -1562,6 +1604,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...scaleProps}
                   {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
@@ -1603,6 +1646,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   stroke={shapeStroke}
                   strokeWidth={shapeStrokeWidth}
                   opacity={shapeOpacity}
+                  {...scaleProps}
                   {...selectionShadow}
                   draggable={isDraggable}
                   dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
@@ -1634,6 +1678,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                 stroke={shapeStroke}
                 strokeWidth={shapeStrokeWidth}
                 opacity={shapeOpacity}
+                {...scaleProps}
                 {...selectionShadow}
                 draggable={isDraggable}
                 dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
@@ -1667,10 +1712,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               background: judgeResult === "correct" || isAllSolved ? "#a9b2d1" : "#3853ff",
               color: "#ffffff",
               borderRadius: "12px",
-              padding: "12px 26px",
+              padding: isNarrowScreen ? "16px 40px" : "12px 26px",
               fontWeight: 700,
-              fontSize: "1rem",
-              cursor: judgeResult === "correct" || isAllSolved ? "default" : "pointer"
+              fontSize: isNarrowScreen ? "1.1rem" : "1rem",
+              cursor: judgeResult === "correct" || isAllSolved ? "default" : "pointer",
+              minWidth: isNarrowScreen ? "140px" : undefined
             }}
           >
             OK
