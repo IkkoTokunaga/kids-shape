@@ -179,8 +179,8 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "square", x: 740, y: 220, rotation: 90 },
       { type: "circle", x: 670, y: 340, rotation: 0 }
     ],
-    snapDistance: 12,
-    snapRotationTolerance: 12,
+    snapDistance: 18,
+    snapRotationTolerance: 18,
     judgeDistance: 16,
     rotationTolerance: 6
   },
@@ -192,8 +192,8 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "square", x: 620, y: 330, rotation: 90 },
       { type: "triangle", x: 760, y: 330, rotation: 180 }
     ],
-    snapDistance: 10,
-    snapRotationTolerance: 10,
+    snapDistance: 16,
+    snapRotationTolerance: 16,
     judgeDistance: 14,
     rotationTolerance: 5
   },
@@ -206,8 +206,8 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "parallelogram", x: 600, y: 330, rotation: 180 },
       { type: "trapezoid", x: 760, y: 330, rotation: 180 }
     ],
-    snapDistance: 9,
-    snapRotationTolerance: 9,
+    snapDistance: 14,
+    snapRotationTolerance: 14,
     judgeDistance: 12,
     rotationTolerance: 4
   },
@@ -221,8 +221,8 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "trapezoid", x: 700, y: 330, rotation: 180 },
       { type: "square", x: 820, y: 330, rotation: 90 }
     ],
-    snapDistance: 8,
-    snapRotationTolerance: 8,
+    snapDistance: 12,
+    snapRotationTolerance: 12,
     judgeDistance: 10,
     rotationTolerance: 4
   },
@@ -237,8 +237,8 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "square", x: 660, y: 320, rotation: 90 },
       { type: "triangle", x: 780, y: 320, rotation: 180 }
     ],
-    snapDistance: 7,
-    snapRotationTolerance: 7,
+    snapDistance: 10,
+    snapRotationTolerance: 10,
     judgeDistance: 9,
     rotationTolerance: 3
   }
@@ -260,8 +260,8 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "circle", x: 620, y: 350, rotation: 0 },
       { type: "diamond", x: 760, y: 350, rotation: 0 }
     ],
-    snapDistance: 10,
-    snapRotationTolerance: 10,
+    snapDistance: 18,
+    snapRotationTolerance: 18,
     judgeDistance: 14,
     rotationTolerance: 5
   },
@@ -280,8 +280,8 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "trapezoid", x: 290, y: 400, rotation: 0 },
       { type: "parallelogram", x: 600, y: 400, rotation: 0 }
     ],
-    snapDistance: 9,
-    snapRotationTolerance: 9,
+    snapDistance: 16,
+    snapRotationTolerance: 16,
     judgeDistance: 12,
     rotationTolerance: 4
   },
@@ -302,8 +302,8 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "square", x: 560, y: 400, rotation: 90 },
       { type: "triangle", x: 720, y: 400, rotation: 180 }
     ],
-    snapDistance: 8,
-    snapRotationTolerance: 8,
+    snapDistance: 14,
+    snapRotationTolerance: 14,
     judgeDistance: 11,
     rotationTolerance: 4
   },
@@ -326,8 +326,8 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "diamond", x: 720, y: 400, rotation: 90 },
       { type: "circle", x: 800, y: 280, rotation: 0 }
     ],
-    snapDistance: 7,
-    snapRotationTolerance: 7,
+    snapDistance: 12,
+    snapRotationTolerance: 12,
     judgeDistance: 10,
     rotationTolerance: 3
   },
@@ -352,8 +352,8 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "circle", x: 670, y: 400, rotation: 0 },
       { type: "triangle", x: 790, y: 400, rotation: 0 }
     ],
-    snapDistance: 7,
-    snapRotationTolerance: 7,
+    snapDistance: 10,
+    snapRotationTolerance: 10,
     judgeDistance: 9,
     rotationTolerance: 3
   }
