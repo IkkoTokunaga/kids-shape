@@ -1187,7 +1187,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
           display: "flex",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: isNarrowScreen ? "6px" : "10px",
+          columnGap: isNarrowScreen ? "6px" : "10px",
           rowGap: "8px",
           padding: isNarrowScreen ? "8px" : "10px",
           borderRadius: "12px",
