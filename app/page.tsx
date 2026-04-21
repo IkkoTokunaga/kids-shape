@@ -3,8 +3,8 @@
 import { useState } from "react";
 import ShapeStageClient from "./shape-stage-client";
 
-type QuizDifficulty = "easy" | "medium" | "hard";
-type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard";
+type QuizDifficulty = "easy" | "medium" | "hard" | "oni";
+type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni";
 
 export default function HomePage() {
   const [selectedMode, setSelectedMode] = useState<StageMode | null>(null);
@@ -104,26 +104,47 @@ export default function HomePage() {
             </button>
             {selectedMode !== "free" && (
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {(["easy", "medium", "hard"] as const).map((difficulty) => (
-                  <button
-                    key={difficulty}
-                    type="button"
-                    onClick={() => {
-                      setSelectedDifficulty(difficulty);
-                      setSelectedMode(`quiz-${difficulty}`);
-                    }}
-                    style={{
-                      border: selectedDifficulty === difficulty ? "2px solid #5470ff" : "1px solid #c6cce0",
-                      background: "#ffffff",
-                      borderRadius: "10px",
-                      padding: "8px 12px",
-                      fontWeight: 700,
-                      cursor: "pointer"
-                    }}
-                  >
-                    {difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : "難"}
-                  </button>
-                ))}
+                {(["easy", "medium", "hard", "oni"] as const).map((difficulty) => {
+                  const isOni = difficulty === "oni";
+                  const isSelected = selectedDifficulty === difficulty;
+                  return (
+                    <button
+                      key={difficulty}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDifficulty(difficulty);
+                        setSelectedMode(`quiz-${difficulty}`);
+                      }}
+                      style={{
+                        border: isSelected
+                          ? isOni
+                            ? "2px solid #c0392b"
+                            : "2px solid #5470ff"
+                          : isOni
+                            ? "1px solid #e07a6a"
+                            : "1px solid #c6cce0",
+                        background: isOni
+                          ? isSelected
+                            ? "#ffecea"
+                            : "#fff6f4"
+                          : "#ffffff",
+                        color: isOni ? "#a6281b" : undefined,
+                        borderRadius: "10px",
+                        padding: "8px 12px",
+                        fontWeight: 700,
+                        cursor: "pointer"
+                      }}
+                    >
+                      {difficulty === "easy"
+                        ? "易"
+                        : difficulty === "medium"
+                          ? "中"
+                          : difficulty === "hard"
+                            ? "難"
+                            : "鬼"}
+                    </button>
+                  );
+                })}
               </div>
             )}
             <ShapeStageClient key={`${selectedMode}-${selectedDifficulty}`} mode={selectedMode} />

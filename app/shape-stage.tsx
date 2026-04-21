@@ -5,8 +5,8 @@ import Konva from "konva";
 import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
 
 type ShapeType = "circle" | "square" | "triangle" | "trapezoid" | "parallelogram" | "diamond";
-type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard";
-type QuizDifficulty = "easy" | "medium" | "hard";
+type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni";
+type QuizDifficulty = "easy" | "medium" | "hard" | "oni";
 
 type ShapeItem = {
   id: string;
@@ -244,6 +244,121 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   }
 ];
 
+// 鬼モード: くぼみを大量に配置する最難関。
+// 可動範囲: x ∈ [85, 815], y ∈ [85, 415] に収まるよう全てのターゲットを内側に配置する。
+const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
+  {
+    targets: [
+      { type: "triangle", x: 160, y: 200, rotation: 180 },
+      { type: "square", x: 300, y: 200, rotation: 90 },
+      { type: "circle", x: 440, y: 200, rotation: 0 },
+      { type: "diamond", x: 580, y: 200, rotation: 90 },
+      { type: "trapezoid", x: 720, y: 200, rotation: 180 },
+      { type: "parallelogram", x: 200, y: 350, rotation: 0 },
+      { type: "square", x: 340, y: 350, rotation: 0 },
+      { type: "triangle", x: 480, y: 350, rotation: 0 },
+      { type: "circle", x: 620, y: 350, rotation: 0 },
+      { type: "diamond", x: 760, y: 350, rotation: 0 }
+    ],
+    snapDistance: 10,
+    snapRotationTolerance: 10,
+    judgeDistance: 14,
+    rotationTolerance: 5
+  },
+  {
+    targets: [
+      { type: "triangle", x: 150, y: 160, rotation: 180 },
+      { type: "square", x: 290, y: 160, rotation: 90 },
+      { type: "circle", x: 430, y: 160, rotation: 0 },
+      { type: "diamond", x: 570, y: 160, rotation: 90 },
+      { type: "trapezoid", x: 710, y: 160, rotation: 180 },
+      { type: "parallelogram", x: 220, y: 310, rotation: 180 },
+      { type: "triangle", x: 360, y: 310, rotation: 0 },
+      { type: "square", x: 500, y: 310, rotation: 0 },
+      { type: "circle", x: 640, y: 310, rotation: 0 },
+      { type: "diamond", x: 780, y: 310, rotation: 0 },
+      { type: "trapezoid", x: 290, y: 400, rotation: 0 },
+      { type: "parallelogram", x: 600, y: 400, rotation: 0 }
+    ],
+    snapDistance: 9,
+    snapRotationTolerance: 9,
+    judgeDistance: 12,
+    rotationTolerance: 4
+  },
+  {
+    targets: [
+      { type: "triangle", x: 150, y: 150, rotation: 180 },
+      { type: "square", x: 290, y: 150, rotation: 90 },
+      { type: "circle", x: 430, y: 150, rotation: 0 },
+      { type: "diamond", x: 570, y: 150, rotation: 90 },
+      { type: "trapezoid", x: 710, y: 150, rotation: 180 },
+      { type: "parallelogram", x: 180, y: 280, rotation: 0 },
+      { type: "triangle", x: 320, y: 280, rotation: 0 },
+      { type: "square", x: 460, y: 280, rotation: 0 },
+      { type: "circle", x: 600, y: 280, rotation: 0 },
+      { type: "diamond", x: 740, y: 280, rotation: 0 },
+      { type: "trapezoid", x: 220, y: 400, rotation: 0 },
+      { type: "parallelogram", x: 400, y: 400, rotation: 180 },
+      { type: "square", x: 560, y: 400, rotation: 90 },
+      { type: "triangle", x: 720, y: 400, rotation: 180 }
+    ],
+    snapDistance: 8,
+    snapRotationTolerance: 8,
+    judgeDistance: 11,
+    rotationTolerance: 4
+  },
+  {
+    targets: [
+      { type: "circle", x: 140, y: 150, rotation: 0 },
+      { type: "triangle", x: 280, y: 150, rotation: 180 },
+      { type: "square", x: 420, y: 150, rotation: 90 },
+      { type: "diamond", x: 560, y: 150, rotation: 90 },
+      { type: "trapezoid", x: 700, y: 150, rotation: 180 },
+      { type: "parallelogram", x: 180, y: 280, rotation: 180 },
+      { type: "square", x: 320, y: 280, rotation: 0 },
+      { type: "triangle", x: 460, y: 280, rotation: 0 },
+      { type: "diamond", x: 600, y: 280, rotation: 0 },
+      { type: "circle", x: 740, y: 280, rotation: 0 },
+      { type: "triangle", x: 160, y: 400, rotation: 180 },
+      { type: "trapezoid", x: 300, y: 400, rotation: 0 },
+      { type: "parallelogram", x: 450, y: 400, rotation: 0 },
+      { type: "square", x: 600, y: 400, rotation: 90 },
+      { type: "diamond", x: 720, y: 400, rotation: 90 },
+      { type: "circle", x: 800, y: 280, rotation: 0 }
+    ],
+    snapDistance: 7,
+    snapRotationTolerance: 7,
+    judgeDistance: 10,
+    rotationTolerance: 3
+  },
+  {
+    targets: [
+      { type: "circle", x: 130, y: 150, rotation: 0 },
+      { type: "triangle", x: 260, y: 150, rotation: 180 },
+      { type: "square", x: 390, y: 150, rotation: 90 },
+      { type: "diamond", x: 520, y: 150, rotation: 90 },
+      { type: "trapezoid", x: 660, y: 150, rotation: 180 },
+      { type: "parallelogram", x: 790, y: 150, rotation: 180 },
+      { type: "parallelogram", x: 160, y: 280, rotation: 0 },
+      { type: "square", x: 290, y: 280, rotation: 0 },
+      { type: "triangle", x: 420, y: 280, rotation: 0 },
+      { type: "circle", x: 550, y: 280, rotation: 0 },
+      { type: "diamond", x: 680, y: 280, rotation: 0 },
+      { type: "trapezoid", x: 790, y: 280, rotation: 0 },
+      { type: "triangle", x: 130, y: 400, rotation: 180 },
+      { type: "diamond", x: 260, y: 400, rotation: 90 },
+      { type: "square", x: 390, y: 400, rotation: 0 },
+      { type: "parallelogram", x: 530, y: 400, rotation: 180 },
+      { type: "circle", x: 670, y: 400, rotation: 0 },
+      { type: "triangle", x: 790, y: 400, rotation: 0 }
+    ],
+    snapDistance: 7,
+    snapRotationTolerance: 7,
+    judgeDistance: 9,
+    rotationTolerance: 3
+  }
+];
+
 const getNormalizedRotation = (rotation: number) => {
   const normalized = rotation % 360;
   return normalized < 0 ? normalized + 360 : normalized;
@@ -401,11 +516,18 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const snapAudioRef = useRef<HTMLAudioElement | null>(null);
   const isQuizMode = mode !== "free";
   const difficulty: QuizDifficulty =
-    mode === "quiz-medium" ? "medium" : mode === "quiz-hard" ? "hard" : "easy";
+    mode === "quiz-medium"
+      ? "medium"
+      : mode === "quiz-hard"
+        ? "hard"
+        : mode === "quiz-oni"
+          ? "oni"
+          : "easy";
   const questionSettingsByDifficulty: Record<QuizDifficulty, QuestionSetting[]> = {
     easy: EASY_QUESTION_SETTINGS,
     medium: MEDIUM_QUESTION_SETTINGS,
-    hard: HARD_QUESTION_SETTINGS
+    hard: HARD_QUESTION_SETTINGS,
+    oni: ONI_QUESTION_SETTINGS
   };
   const questionSettings = questionSettingsByDifficulty[difficulty];
   const currentQuestion = questionSettings[questionIndex];
@@ -1038,7 +1160,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               ? "せいかい！ ぴったりはまったね 🎉"
               : judgeResult === "wrong"
                 ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
-                : `くぼみに合う形を置いて、OKを押して判定しよう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : "難"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
+                : `くぼみに合う形を置いて、OKを押して判定しよう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : difficulty === "hard" ? "難" : "鬼"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
       </p>
       <div ref={stageHostRef} style={{ display: "flex", justifyContent: "center", width: "100%", minWidth: 0 }}>
         <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px", touchAction: "none" }}>

@@ -7,7 +7,7 @@ const ShapeStage = dynamic(() => import("./shape-stage"), {
 });
 
 type ShapeStageClientProps = {
-  mode: "free" | "quiz-easy" | "quiz-medium" | "quiz-hard";
+  mode: "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni";
 };
 
 export default function ShapeStageClient({ mode }: ShapeStageClientProps) {
