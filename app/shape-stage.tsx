@@ -1591,7 +1591,8 @@ export default function ShapeStage({
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: isNarrowScreen ? "space-between" : "flex-start",
+            gap: isNarrowScreen ? 0 : "8px",
             width: "100%"
           }}
         >
