@@ -1262,37 +1262,6 @@ export default function ShapeStage({
 
   return (
     <div style={{ display: "grid", gap: "12px" }}>
-      <p
-        style={{
-          margin: 0,
-          minHeight: "1.6em",
-          color: isShapeSelected
-            ? "#3853ff"
-            : !isQuizMode
-              ? "#44506b"
-              : judgeResult === "correct"
-                ? "#2f9e44"
-                : judgeResult === "wrong"
-                  ? "#cc3344"
-                  : "#44506b",
-          fontWeight: 700,
-          fontSize: isNarrowScreen ? "0.85rem" : "1rem",
-          lineHeight: 1.4,
-          wordBreak: "break-word"
-        }}
-      >
-        {isShapeSelected
-          ? "形をえらんだよ！ 回転・削除・色・形を えらぼう（もういちどタップで解除）"
-          : !isQuizMode
-          ? "好きな形を置いて、ドラッグや回転で自由に遊ぼう"
-          : isAllSolved
-            ? `${questionSettings.length}問クリア！ぜんぶせいかい！すごい 🎊`
-            : judgeResult === "correct"
-              ? "せいかい！ ぴったりはまったね 🎉"
-              : judgeResult === "wrong"
-                ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
-                : `くぼみに合う形を置こう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : difficulty === "hard" ? "難" : "鬼"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
-      </p>
       <div ref={stageHostRef} style={{ display: "flex", justifyContent: "center", width: "100%", minWidth: 0 }}>
         <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px", touchAction: "none" }}>
           {showCorrectPopup && (
