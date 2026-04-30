@@ -540,7 +540,7 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
   const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
   const [celebrationLevel, setCelebrationLevel] = useState<0 | 1 | 2>(0);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
-  const [showFinalClearPopup, setShowFinalClearPopup] = useState(false);
+  const [isFinalClearPopup, setIsFinalClearPopup] = useState(false);
   const popupDelayTimerRef = useRef<number | null>(null);
   const nextQuestionTimerRef = useRef<number | null>(null);
   const stageHostRef = useRef<HTMLDivElement | null>(null);
@@ -656,7 +656,7 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
     }
     setCelebrationLevel(0);
     setShowCorrectPopup(false);
-    setShowFinalClearPopup(false);
+    setIsFinalClearPopup(false);
   }, [questionIndex]);
 
   useEffect(() => {
@@ -666,7 +666,7 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
     setIsAllSolved(false);
     setJudgeResult("idle");
     setSelectedShapeId(null);
-    setShowFinalClearPopup(false);
+    setIsFinalClearPopup(false);
   }, [difficulty]);
 
   useEffect(() => {
@@ -1187,13 +1187,14 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
     void playSuccessSound(soundLevel).catch(() => undefined);
 
     popupDelayTimerRef.current = window.setTimeout(() => {
+      setIsFinalClearPopup(isLastQuestion);
       setShowCorrectPopup(true);
       nextQuestionTimerRef.current = window.setTimeout(() => {
-        setShowCorrectPopup(false);
         if (isLastQuestion) {
           setIsAllSolved(true);
-          setShowFinalClearPopup(true);
         } else {
+          setShowCorrectPopup(false);
+          setIsFinalClearPopup(false);
           setQuestionIndex((current) => current + 1);
           setShapes([]);
           setMatchedTargetIndices([]);
@@ -1454,64 +1455,45 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
       <div ref={stageHostRef} style={{ display: "flex", justifyContent: "center", width: "100%", minWidth: 0 }}>
         <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px", touchAction: "none" }}>
           {showCorrectPopup && (
-            <div className="correct-popup" role="status" aria-live="polite">
-              <div className="correct-popup-stars" aria-hidden>✨ 🌟 ✨</div>
-              <div className="correct-popup-main">せいかい！</div>
-              <div className="correct-popup-sub">つぎのもんだいへ しゅっぱつ！</div>
-            </div>
-          )}
-          {showFinalClearPopup && (
             <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "grid",
-                placeItems: "center",
-                background: "rgba(17, 24, 39, 0.72)",
-                zIndex: 25
-              }}
+              className={`correct-popup${isFinalClearPopup ? " correct-popup-interactive" : ""}`}
+              role="status"
+              aria-live="polite"
             >
-              <div
-                role="dialog"
-                aria-modal="true"
-                aria-live="polite"
-                style={{
-                  width: "min(88%, 560px)",
-                  borderRadius: "20px",
-                  background: "#ffffff",
-                  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)",
-                  padding: isNarrowScreen ? "20px 16px" : "28px 24px",
-                  textAlign: "center",
-                  display: "grid",
-                  gap: isNarrowScreen ? "12px" : "16px"
-                }}
-              >
-                <div style={{ fontSize: isNarrowScreen ? "1.4rem" : "1.8rem", fontWeight: 900, color: "#1f2b52" }}>
-                  全問クリアおめでとう！
-                </div>
-                <div style={{ color: "#44506b", fontWeight: 700 }}>
-                  {difficulty === "oni" ? "鬼モード完全クリア！TOPにもどろう！" : "つぎのステージへ すすもう！"}
-                </div>
+              <div className="correct-popup-stars" aria-hidden>✨ 🌟 ✨</div>
+              <div className="correct-popup-main">{isFinalClearPopup ? "全問クリアおめでとう！" : "せいかい！"}</div>
+              <div className="correct-popup-sub">
+                {isFinalClearPopup
+                  ? difficulty === "oni"
+                    ? "鬼モード完全クリア！TOPにもどろう！"
+                    : "つぎのステージへ すすもう！"
+                  : "つぎのもんだいへ しゅっぱつ！"}
+              </div>
+              {isFinalClearPopup && (
                 <button
                   type="button"
                   onClick={() => {
-                    setShowFinalClearPopup(false);
+                    setShowCorrectPopup(false);
+                    setIsFinalClearPopup(false);
                     onQuizComplete?.();
                   }}
                   style={{
+                    marginTop: "8px",
                     border: "none",
                     background: difficulty === "oni" ? "#cc3344" : "#3f63ff",
                     color: "#ffffff",
                     borderRadius: "12px",
-                    padding: isNarrowScreen ? "12px 16px" : "12px 20px",
+                    padding: isNarrowScreen ? "10px 16px" : "10px 18px",
                     fontWeight: 800,
-                    fontSize: isNarrowScreen ? "1rem" : "1.05rem",
-                    cursor: "pointer"
+                    fontSize: isNarrowScreen ? "0.95rem" : "1rem",
+                    cursor: "pointer",
+                    width: "fit-content",
+                    justifySelf: "center"
                   }}
                 >
                   {difficulty === "oni" ? "TOPにもどる" : "次のステージへ"}
                 </button>
-              </div>
+              )}
             </div>
           )}
           {celebrationLevel > 0 && (

@@ -34,6 +34,10 @@ body {
   animation: correctPopupIn 0.25s ease-out;
 }
 
+.correct-popup.correct-popup-interactive {
+  pointer-events: auto;
+}
+
 .correct-popup-stars {
   font-size: clamp(1.4rem, 4vw, 2rem);
   letter-spacing: 2px;
