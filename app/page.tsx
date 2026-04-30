@@ -129,7 +129,7 @@ export default function HomePage() {
                 style={{
                   width: "fit-content",
                   border: "none",
-                  background: "#ffffff",
+                  background: "transparent",
                   borderRadius: "10px",
                   padding: 0,
                   cursor: "pointer",
