@@ -886,10 +886,11 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
   };
 
   const addShape = (type: ShapeType, color: string) => {
+    const newShapeId = `shape-${shapeIdSerialRef.current++}`;
     setShapes((currentShapes) => {
       const nextIndex = currentShapes.filter((shape) => shape.type === type).length;
       const newShape: ShapeItem = {
-        id: `shape-${shapeIdSerialRef.current++}`,
+        id: newShapeId,
         type,
         x: 120 + ((nextIndex * 85) % 620),
         y: 120 + ((nextIndex * 60) % 260),
@@ -897,10 +898,9 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
         isLocked: false,
         color
       };
-
-      setSelectedShapeId(newShape.id);
       return [...currentShapes, newShape];
     });
+    setSelectedShapeId(newShapeId);
   };
 
   const paletteIconSize = isNarrowScreen ? 32 : 24;
