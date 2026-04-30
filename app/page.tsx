@@ -9,6 +9,23 @@ type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni"
 export default function HomePage() {
   const [selectedMode, setSelectedMode] = useState<StageMode | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuizDifficulty>("easy");
+  const handleQuizComplete = () => {
+    if (selectedMode === "free") return;
+    if (selectedDifficulty === "oni") {
+      setSelectedMode(null);
+      setSelectedDifficulty("easy");
+      return;
+    }
+
+    const nextDifficulty: Record<Exclude<QuizDifficulty, "oni">, QuizDifficulty> = {
+      easy: "medium",
+      medium: "hard",
+      hard: "oni"
+    };
+    const next = nextDifficulty[selectedDifficulty];
+    setSelectedDifficulty(next);
+    setSelectedMode(`quiz-${next}`);
+  };
 
   return (
     <main
@@ -143,7 +160,11 @@ export default function HomePage() {
                 })}
               </div>
             )}
-            <ShapeStageClient key={`${selectedMode}-${selectedDifficulty}`} mode={selectedMode} />
+            <ShapeStageClient
+              key={`${selectedMode}-${selectedDifficulty}`}
+              mode={selectedMode}
+              onQuizComplete={handleQuizComplete}
+            />
           </div>
         )}
       </section>

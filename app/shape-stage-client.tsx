@@ -8,8 +8,9 @@ const ShapeStage = dynamic(() => import("./shape-stage"), {
 
 type ShapeStageClientProps = {
   mode: "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni";
+  onQuizComplete?: () => void;
 };
 
-export default function ShapeStageClient({ mode }: ShapeStageClientProps) {
-  return <ShapeStage mode={mode} />;
+export default function ShapeStageClient({ mode, onQuizComplete }: ShapeStageClientProps) {
+  return <ShapeStage mode={mode} onQuizComplete={onQuizComplete} />;
 }

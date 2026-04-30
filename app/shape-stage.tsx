@@ -69,46 +69,28 @@ const EASY_QUESTION_SETTINGS: QuestionSetting[] = [
     rotationTolerance: 12
   },
   {
-    targets: [
-      { type: "square", x: 650, y: 220 },
-      { type: "circle", x: 770, y: 220 }
-    ],
+    targets: [{ type: "circle", x: 700, y: 250 }],
     snapDistance: 16,
     snapRotationTolerance: 16,
     judgeDistance: 24,
     rotationTolerance: 10
   },
   {
-    targets: [
-      { type: "triangle", x: 620, y: 230 },
-      { type: "square", x: 740, y: 230 },
-      { type: "circle", x: 680, y: 340 }
-    ],
+    targets: [{ type: "triangle", x: 700, y: 250 }],
     snapDistance: 14,
     snapRotationTolerance: 14,
     judgeDistance: 20,
     rotationTolerance: 8
   },
   {
-    targets: [
-      { type: "heart", x: 600, y: 220 },
-      { type: "star", x: 740, y: 220 },
-      { type: "rectangle", x: 660, y: 330 },
-      { type: "circle", x: 800, y: 330 }
-    ],
+    targets: [{ type: "heart", x: 700, y: 250 }],
     snapDistance: 12,
     snapRotationTolerance: 12,
     judgeDistance: 16,
     rotationTolerance: 6
   },
   {
-    targets: [
-      { type: "triangle", x: 580, y: 210 },
-      { type: "square", x: 700, y: 210 },
-      { type: "circle", x: 820, y: 210 },
-      { type: "star", x: 640, y: 330 },
-      { type: "rectangle", x: 780, y: 330 }
-    ],
+    targets: [{ type: "star", x: 700, y: 250 }],
     snapDistance: 10,
     snapRotationTolerance: 10,
     judgeDistance: 12,
@@ -455,6 +437,7 @@ const findNearestSlot = (
 
 type ShapeStageProps = {
   mode: StageMode;
+  onQuizComplete?: () => void;
 };
 
 const BASE_STAGE_WIDTH = 900;
@@ -544,7 +527,7 @@ const getShapeHalfExtents = (type: ShapeType, rotation: number, scale = 1) => {
   return { halfWidth: base.halfWidth * scale, halfHeight: base.halfHeight * scale };
 };
 
-export default function ShapeStage({ mode }: ShapeStageProps) {
+export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [recentlyAddedShape, setRecentlyAddedShape] = useState<ShapeType | null>(null);
   const recentlyAddedShapeTimerRef = useRef<number | null>(null);
@@ -557,6 +540,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
   const [celebrationLevel, setCelebrationLevel] = useState<0 | 1 | 2>(0);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
+  const [showFinalClearPopup, setShowFinalClearPopup] = useState(false);
   const popupDelayTimerRef = useRef<number | null>(null);
   const nextQuestionTimerRef = useRef<number | null>(null);
   const stageHostRef = useRef<HTMLDivElement | null>(null);
@@ -672,6 +656,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     }
     setCelebrationLevel(0);
     setShowCorrectPopup(false);
+    setShowFinalClearPopup(false);
   }, [questionIndex]);
 
   useEffect(() => {
@@ -681,6 +666,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setIsAllSolved(false);
     setJudgeResult("idle");
     setSelectedShapeId(null);
+    setShowFinalClearPopup(false);
   }, [difficulty]);
 
   useEffect(() => {
@@ -1200,19 +1186,19 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     const soundLevel: 1 | 2 = isLastQuestion ? 2 : 1;
     void playSuccessSound(soundLevel).catch(() => undefined);
 
-    if (isLastQuestion) {
-      setIsAllSolved(true);
-      return;
-    }
-
     popupDelayTimerRef.current = window.setTimeout(() => {
       setShowCorrectPopup(true);
       nextQuestionTimerRef.current = window.setTimeout(() => {
         setShowCorrectPopup(false);
-        setQuestionIndex((current) => current + 1);
-        setShapes([]);
-        setMatchedTargetIndices([]);
-        setJudgeResult("idle");
+        if (isLastQuestion) {
+          setIsAllSolved(true);
+          setShowFinalClearPopup(true);
+        } else {
+          setQuestionIndex((current) => current + 1);
+          setShapes([]);
+          setMatchedTargetIndices([]);
+          setJudgeResult("idle");
+        }
         nextQuestionTimerRef.current = null;
       }, NEXT_QUESTION_DELAY_MS);
       popupDelayTimerRef.current = null;
@@ -1472,6 +1458,60 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               <div className="correct-popup-stars" aria-hidden>✨ 🌟 ✨</div>
               <div className="correct-popup-main">せいかい！</div>
               <div className="correct-popup-sub">つぎのもんだいへ しゅっぱつ！</div>
+            </div>
+          )}
+          {showFinalClearPopup && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "grid",
+                placeItems: "center",
+                background: "rgba(17, 24, 39, 0.72)",
+                zIndex: 25
+              }}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-live="polite"
+                style={{
+                  width: "min(88%, 560px)",
+                  borderRadius: "20px",
+                  background: "#ffffff",
+                  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)",
+                  padding: isNarrowScreen ? "20px 16px" : "28px 24px",
+                  textAlign: "center",
+                  display: "grid",
+                  gap: isNarrowScreen ? "12px" : "16px"
+                }}
+              >
+                <div style={{ fontSize: isNarrowScreen ? "1.4rem" : "1.8rem", fontWeight: 900, color: "#1f2b52" }}>
+                  全問クリアおめでとう！
+                </div>
+                <div style={{ color: "#44506b", fontWeight: 700 }}>
+                  {difficulty === "oni" ? "鬼モード完全クリア！TOPにもどろう！" : "つぎのステージへ すすもう！"}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFinalClearPopup(false);
+                    onQuizComplete?.();
+                  }}
+                  style={{
+                    border: "none",
+                    background: difficulty === "oni" ? "#cc3344" : "#3f63ff",
+                    color: "#ffffff",
+                    borderRadius: "12px",
+                    padding: isNarrowScreen ? "12px 16px" : "12px 20px",
+                    fontWeight: 800,
+                    fontSize: isNarrowScreen ? "1rem" : "1.05rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  {difficulty === "oni" ? "TOPにもどる" : "次のステージへ"}
+                </button>
+              </div>
             </div>
           )}
           {celebrationLevel > 0 && (
