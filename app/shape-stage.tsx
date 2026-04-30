@@ -459,6 +459,7 @@ type ShapeStageProps = {
 const BASE_STAGE_WIDTH = 900;
 const BASE_STAGE_HEIGHT = 500;
 const NARROW_STAGE_HEIGHT = 620;
+const CORRECT_POPUP_DELAY_MS = 500;
 const NEXT_QUESTION_DELAY_MS = 1300;
 const EDGE_SAFE_PADDING = 10;
 // スマホ表示ではタップしやすいように図形とくぼみをすこし大きく見せる。
@@ -542,6 +543,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [judgeResult, setJudgeResult] = useState<"idle" | "correct" | "wrong">("idle");
   const [celebrationLevel, setCelebrationLevel] = useState<0 | 1 | 2>(0);
   const [showCorrectPopup, setShowCorrectPopup] = useState(false);
+  const popupDelayTimerRef = useRef<number | null>(null);
+  const nextQuestionTimerRef = useRef<number | null>(null);
   const stageHostRef = useRef<HTMLDivElement | null>(null);
   const [stageHostWidth, setStageHostWidth] = useState(320);
   const [viewportHeight, setViewportHeight] = useState(800);
@@ -645,6 +648,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
 
   useEffect(() => {
     // Ensure celebration effect does not remain on next question.
+    if (popupDelayTimerRef.current !== null) {
+      window.clearTimeout(popupDelayTimerRef.current);
+      popupDelayTimerRef.current = null;
+    }
+    if (nextQuestionTimerRef.current !== null) {
+      window.clearTimeout(nextQuestionTimerRef.current);
+      nextQuestionTimerRef.current = null;
+    }
     setCelebrationLevel(0);
     setShowCorrectPopup(false);
   }, [questionIndex]);
@@ -673,6 +684,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       if (recentlyAddedShapeTimerRef.current !== null) {
         window.clearTimeout(recentlyAddedShapeTimerRef.current);
         recentlyAddedShapeTimerRef.current = null;
+      }
+      if (popupDelayTimerRef.current !== null) {
+        window.clearTimeout(popupDelayTimerRef.current);
+        popupDelayTimerRef.current = null;
+      }
+      if (nextQuestionTimerRef.current !== null) {
+        window.clearTimeout(nextQuestionTimerRef.current);
+        nextQuestionTimerRef.current = null;
       }
     };
   }, []);
@@ -1161,14 +1180,18 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       return;
     }
 
-    setShowCorrectPopup(true);
-    window.setTimeout(() => {
-      setShowCorrectPopup(false);
-      setQuestionIndex((current) => current + 1);
-      setShapes([]);
-      setMatchedTargetIndices([]);
-      setJudgeResult("idle");
-    }, NEXT_QUESTION_DELAY_MS);
+    popupDelayTimerRef.current = window.setTimeout(() => {
+      setShowCorrectPopup(true);
+      nextQuestionTimerRef.current = window.setTimeout(() => {
+        setShowCorrectPopup(false);
+        setQuestionIndex((current) => current + 1);
+        setShapes([]);
+        setMatchedTargetIndices([]);
+        setJudgeResult("idle");
+        nextQuestionTimerRef.current = null;
+      }, NEXT_QUESTION_DELAY_MS);
+      popupDelayTimerRef.current = null;
+    }, CORRECT_POPUP_DELAY_MS);
   }, [
     isQuizMode,
     isAllSolved,
