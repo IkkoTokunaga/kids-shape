@@ -137,7 +137,14 @@ export default function HomePage() {
                 }}
                 aria-label="TOPへ戻る"
               >
-                <Image src="/logo.png" alt="かたち ロゴ" width={180} height={98} priority />
+                <Image
+                  src="/logo.png"
+                  alt="かたち ロゴ"
+                  width={180}
+                  height={98}
+                  priority
+                  style={{ width: "clamp(96px, 28vw, 180px)", height: "auto" }}
+                />
               </button>
               {selectedMode !== "free" &&
                 (["easy", "medium", "hard", "oni"] as const).map((difficulty) => {
