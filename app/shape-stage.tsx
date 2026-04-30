@@ -465,8 +465,6 @@ const EDGE_SAFE_PADDING = 10;
 const NARROW_SHAPE_SCALE = 1.2;
 const NARROW_EDGE_SAFE_PADDING = 0;
 const SNAP_SOUND_FILE_URL = "/sounds/peta.mp3";
-const SHAPE_OUTLINE_STROKE = "rgba(27, 40, 83, 0.28)";
-const SHAPE_OUTLINE_STROKE_WIDTH = 1.5;
 const TRIANGLE_POINTS: [number, number][] = [
   [0, -75],
   [64.95, 37.5],
@@ -1019,6 +1017,8 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const handleShapeTap = (id: string) => {
     const target = shapes.find((shape) => shape.id === id);
     if (!target || target.isLocked) return;
+    // くぼみにはまっている形は選択できないようにする（ドラッグで引き出してから選択する想定）。
+    if (isShapeInSlot(target)) return;
     setSelectedShapeId((current) => (current === id ? null : id));
   };
 
@@ -1454,10 +1454,11 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
                   )}
                 {shapes.map((shape) => {
             const isSelected = shape.id === selectedShapeId && !shape.isLocked;
-            const shapeStroke = isSelected ? "#3853ff" : SHAPE_OUTLINE_STROKE;
-            const shapeStrokeWidth = isSelected ? 4 : SHAPE_OUTLINE_STROKE_WIDTH;
+            const shapeStroke = isSelected ? "#3853ff" : undefined;
+            const shapeStrokeWidth = isSelected ? 4 : 0;
             const shapeOpacity = 1;
-            const isDraggable = !shape.isLocked;
+            // くぼみにはまっている形はドラッグで動かせないようにする（ロック済みの形も同様）。
+            const isDraggable = !shape.isLocked && !isShapeInSlot(shape);
             const scaleProps = {
               scaleX: shapeScale,
               scaleY: shapeScale,
