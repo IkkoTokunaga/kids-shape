@@ -1610,42 +1610,52 @@ export default function ShapeStage({
           background: "#f4f6ff"
         }}
       >
-        {paletteShapesForCurrentMode.map((type) => {
-          const isActiveForChange = isShapeSelected && selectedShapeData?.type === type;
-          return (
-            <button
-              key={type}
-              type="button"
-              onClick={() => {
-                if (applyTypeToSelected(type)) return;
-                const colorToUse =
-                  selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
-                addShape(type, colorToUse);
-                flashRecentlyAddedShape(type);
-              }}
-              aria-label={isShapeSelected ? `選択中の形を ${type} に変更` : `${type} を追加`}
-              style={{
-                border: isActiveForChange
-                  ? "2px solid #3853ff"
-                  : recentlyAddedShape === type && !isShapeSelected
-                  ? "2px solid #5470ff"
-                  : "1px solid #c6cce0",
-                background: "#ffffff",
-                borderRadius: "12px",
-                padding: isNarrowScreen ? "8px" : "10px",
-                fontSize: "0.9rem",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: isNarrowScreen ? "54px" : "48px",
-                height: isNarrowScreen ? "54px" : "48px"
-              }}
-            >
-              {renderPaletteShape(type)}
-            </button>
-          );
-        })}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
+            width: isNarrowScreen ? "100%" : "auto",
+            justifyContent: isNarrowScreen ? "center" : "flex-start"
+          }}
+        >
+          {paletteShapesForCurrentMode.map((type) => {
+            const isActiveForChange = isShapeSelected && selectedShapeData?.type === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => {
+                  if (applyTypeToSelected(type)) return;
+                  const colorToUse =
+                    selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+                  addShape(type, colorToUse);
+                  flashRecentlyAddedShape(type);
+                }}
+                aria-label={isShapeSelected ? `選択中の形を ${type} に変更` : `${type} を追加`}
+                style={{
+                  border: isActiveForChange
+                    ? "2px solid #3853ff"
+                    : recentlyAddedShape === type && !isShapeSelected
+                    ? "2px solid #5470ff"
+                    : "1px solid #c6cce0",
+                  background: "#ffffff",
+                  borderRadius: "12px",
+                  padding: isNarrowScreen ? "8px" : "10px",
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: isNarrowScreen ? "54px" : "48px",
+                  height: isNarrowScreen ? "54px" : "48px"
+                }}
+              >
+                {renderPaletteShape(type)}
+              </button>
+            );
+          })}
+        </div>
         {isNarrowScreen && (
           <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
         )}
@@ -1705,7 +1715,7 @@ export default function ShapeStage({
             fontWeight: 700,
             fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
             cursor: isShapeSelected ? "pointer" : "not-allowed",
-            display: "inline-flex",
+            display: isNarrowScreen ? "none" : "inline-flex",
             alignItems: "center",
             gap: "4px"
           }}
@@ -1740,7 +1750,7 @@ export default function ShapeStage({
             fontWeight: 700,
             fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
             cursor: isShapeSelected ? "pointer" : "not-allowed",
-            display: "inline-flex",
+            display: isNarrowScreen ? "none" : "inline-flex",
             alignItems: "center",
             gap: "4px"
           }}
@@ -1758,6 +1768,79 @@ export default function ShapeStage({
           {!isNarrowScreen && <span>回転</span>}
         </button>
       </div>
+      {isNarrowScreen && (
+        <>
+          <button
+            type="button"
+            onClick={deleteSelected}
+            disabled={!isShapeSelected}
+            aria-label="選択中の形を削除"
+            title="削除"
+            style={{
+              position: "fixed",
+              left: "12px",
+              bottom: "12px",
+              zIndex: 25,
+              border: "1px solid #c6cce0",
+              background: isShapeSelected ? "#ffe3e6" : "#f2f4fb",
+              color: isShapeSelected ? "#a52033" : "#a3a9bf",
+              borderRadius: "12px",
+              padding: "12px 14px",
+              fontWeight: 700,
+              cursor: isShapeSelected ? "pointer" : "not-allowed",
+              display: "inline-flex",
+              alignItems: "center"
+            }}
+          >
+            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M4 7h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M10 7V4h4v3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <path
+                d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              <path d="M10 11v7M14 11v7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={rotateSelected}
+            disabled={!isShapeSelected}
+            aria-label="選択中の形を回転"
+            title="回転"
+            style={{
+              position: "fixed",
+              right: "12px",
+              bottom: "12px",
+              zIndex: 25,
+              border: "1px solid #c6cce0",
+              background: isShapeSelected ? "#e8efff" : "#f2f4fb",
+              color: isShapeSelected ? "#1f2b52" : "#a3a9bf",
+              borderRadius: "12px",
+              padding: "12px 14px",
+              fontWeight: 700,
+              cursor: isShapeSelected ? "pointer" : "not-allowed",
+              display: "inline-flex",
+              alignItems: "center"
+            }}
+          >
+            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M21 12a9 9 0 1 1-3.2-6.88"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path d="M21 3v6h-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+          </button>
+        </>
+      )}
     </div>
   );
 }
