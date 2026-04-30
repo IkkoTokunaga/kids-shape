@@ -535,6 +535,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [recentlyAddedShape, setRecentlyAddedShape] = useState<ShapeType | null>(null);
   const recentlyAddedShapeTimerRef = useRef<number | null>(null);
+  const shapeIdSerialRef = useRef(0);
   const [shapes, setShapes] = useState<ShapeItem[]>([]);
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -889,7 +890,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     setShapes((currentShapes) => {
       const nextIndex = currentShapes.filter((shape) => shape.type === type).length;
       const newShape: ShapeItem = {
-        id: `${type}-${nextIndex}`,
+        id: `shape-${shapeIdSerialRef.current++}`,
         type,
         x: 120 + ((nextIndex * 85) % 620),
         y: 120 + ((nextIndex * 60) % 260),
