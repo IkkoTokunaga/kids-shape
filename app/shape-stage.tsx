@@ -232,19 +232,19 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
 const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
   {
     targets: [
-      { type: "triangle", x: 150, y: 200, rotation: 180 },
-      { type: "square", x: 245, y: 200, rotation: 90 },
-      { type: "circle", x: 335, y: 200, rotation: 0 },
-      { type: "rectangle", x: 420, y: 200, rotation: 90 },
-      { type: "heart", x: 510, y: 200, rotation: 180 },
-      { type: "star", x: 610, y: 200, rotation: 0 },
-      { type: "square", x: 720, y: 200, rotation: 0 },
-      { type: "star", x: 175, y: 335, rotation: 180 },
-      { type: "circle", x: 290, y: 335, rotation: 0 },
-      { type: "triangle", x: 390, y: 335, rotation: 0 },
-      { type: "rectangle", x: 490, y: 335, rotation: 0 },
-      { type: "heart", x: 600, y: 335, rotation: 0 },
-      { type: "triangle", x: 705, y: 335, rotation: 180 }
+      { type: "triangle", x: 170, y: 120, rotation: 180 },
+      { type: "square", x: 355, y: 165, rotation: 90 },
+      { type: "circle", x: 610, y: 115, rotation: 0 },
+      { type: "rectangle", x: 770, y: 215, rotation: 90 },
+      { type: "heart", x: 520, y: 330, rotation: 180 },
+      { type: "star", x: 290, y: 360, rotation: 0 },
+      { type: "square", x: 130, y: 265, rotation: 0 },
+      { type: "star", x: 700, y: 360, rotation: 180 },
+      { type: "circle", x: 430, y: 250, rotation: 0 },
+      { type: "triangle", x: 230, y: 220, rotation: 0 },
+      { type: "rectangle", x: 650, y: 255, rotation: 0 },
+      { type: "heart", x: 800, y: 110, rotation: 0 },
+      { type: "triangle", x: 460, y: 110, rotation: 180 }
     ],
     snapDistance: 16,
     snapRotationTolerance: 16,
@@ -253,21 +253,21 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "triangle", x: 140, y: 175, rotation: 180 },
-      { type: "square", x: 235, y: 175, rotation: 90 },
-      { type: "circle", x: 325, y: 175, rotation: 0 },
-      { type: "rectangle", x: 410, y: 175, rotation: 90 },
-      { type: "heart", x: 505, y: 175, rotation: 180 },
-      { type: "star", x: 610, y: 175, rotation: 0 },
-      { type: "circle", x: 710, y: 175, rotation: 0 },
-      { type: "square", x: 795, y: 175, rotation: 0 },
-      { type: "star", x: 155, y: 315, rotation: 180 },
-      { type: "circle", x: 270, y: 315, rotation: 0 },
-      { type: "triangle", x: 370, y: 315, rotation: 0 },
-      { type: "square", x: 465, y: 315, rotation: 90 },
-      { type: "rectangle", x: 555, y: 315, rotation: 0 },
-      { type: "heart", x: 660, y: 315, rotation: 0 },
-      { type: "triangle", x: 770, y: 315, rotation: 180 }
+      { type: "triangle", x: 130, y: 125, rotation: 180 },
+      { type: "square", x: 280, y: 205, rotation: 90 },
+      { type: "circle", x: 505, y: 135, rotation: 0 },
+      { type: "rectangle", x: 705, y: 165, rotation: 90 },
+      { type: "heart", x: 385, y: 340, rotation: 180 },
+      { type: "star", x: 210, y: 300, rotation: 0 },
+      { type: "circle", x: 780, y: 320, rotation: 0 },
+      { type: "square", x: 620, y: 365, rotation: 0 },
+      { type: "star", x: 720, y: 95, rotation: 180 },
+      { type: "circle", x: 420, y: 245, rotation: 0 },
+      { type: "triangle", x: 260, y: 380, rotation: 0 },
+      { type: "square", x: 125, y: 235, rotation: 90 },
+      { type: "rectangle", x: 560, y: 255, rotation: 0 },
+      { type: "heart", x: 815, y: 200, rotation: 0 },
+      { type: "triangle", x: 640, y: 105, rotation: 180 }
     ],
     snapDistance: 14,
     snapRotationTolerance: 14,
@@ -276,25 +276,25 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "triangle", x: 135, y: 160, rotation: 180 },
-      { type: "square", x: 230, y: 160, rotation: 90 },
-      { type: "circle", x: 320, y: 160, rotation: 0 },
-      { type: "rectangle", x: 405, y: 160, rotation: 90 },
-      { type: "heart", x: 500, y: 160, rotation: 180 },
-      { type: "star", x: 605, y: 160, rotation: 0 },
-      { type: "star", x: 160, y: 265, rotation: 180 },
-      { type: "triangle", x: 270, y: 265, rotation: 0 },
-      { type: "square", x: 365, y: 265, rotation: 0 },
-      { type: "rectangle", x: 455, y: 265, rotation: 0 },
-      { type: "circle", x: 550, y: 265, rotation: 0 },
-      { type: "heart", x: 655, y: 265, rotation: 180 },
-      { type: "triangle", x: 760, y: 265, rotation: 180 },
-      { type: "circle", x: 195, y: 370, rotation: 0 },
-      { type: "square", x: 300, y: 370, rotation: 90 },
-      { type: "star", x: 420, y: 370, rotation: 0 },
-      { type: "rectangle", x: 530, y: 370, rotation: 90 },
-      { type: "heart", x: 630, y: 370, rotation: 0 },
-      { type: "triangle", x: 725, y: 370, rotation: 0 }
+      { type: "triangle", x: 120, y: 110, rotation: 180 },
+      { type: "square", x: 255, y: 175, rotation: 90 },
+      { type: "circle", x: 430, y: 105, rotation: 0 },
+      { type: "rectangle", x: 595, y: 145, rotation: 90 },
+      { type: "heart", x: 760, y: 115, rotation: 180 },
+      { type: "star", x: 705, y: 235, rotation: 0 },
+      { type: "star", x: 165, y: 305, rotation: 180 },
+      { type: "triangle", x: 315, y: 265, rotation: 0 },
+      { type: "square", x: 490, y: 225, rotation: 0 },
+      { type: "rectangle", x: 660, y: 330, rotation: 0 },
+      { type: "circle", x: 810, y: 285, rotation: 0 },
+      { type: "heart", x: 520, y: 370, rotation: 180 },
+      { type: "triangle", x: 360, y: 355, rotation: 180 },
+      { type: "circle", x: 95, y: 390, rotation: 0 },
+      { type: "square", x: 225, y: 390, rotation: 90 },
+      { type: "star", x: 390, y: 390, rotation: 0 },
+      { type: "rectangle", x: 600, y: 250, rotation: 90 },
+      { type: "heart", x: 785, y: 390, rotation: 0 },
+      { type: "triangle", x: 95, y: 200, rotation: 0 }
     ],
     snapDistance: 12,
     snapRotationTolerance: 12,
@@ -303,28 +303,28 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "triangle", x: 130, y: 155, rotation: 180 },
-      { type: "square", x: 215, y: 155, rotation: 90 },
-      { type: "circle", x: 305, y: 155, rotation: 0 },
-      { type: "rectangle", x: 390, y: 155, rotation: 90 },
-      { type: "heart", x: 480, y: 155, rotation: 180 },
-      { type: "star", x: 585, y: 155, rotation: 0 },
-      { type: "circle", x: 700, y: 155, rotation: 0 },
-      { type: "triangle", x: 790, y: 155, rotation: 0 },
-      { type: "star", x: 145, y: 260, rotation: 180 },
-      { type: "triangle", x: 255, y: 260, rotation: 0 },
-      { type: "square", x: 350, y: 260, rotation: 0 },
-      { type: "rectangle", x: 440, y: 260, rotation: 0 },
-      { type: "heart", x: 540, y: 260, rotation: 180 },
-      { type: "triangle", x: 645, y: 260, rotation: 180 },
-      { type: "square", x: 755, y: 260, rotation: 90 },
-      { type: "circle", x: 160, y: 365, rotation: 0 },
-      { type: "star", x: 275, y: 365, rotation: 0 },
-      { type: "rectangle", x: 390, y: 365, rotation: 90 },
-      { type: "heart", x: 495, y: 365, rotation: 0 },
-      { type: "triangle", x: 600, y: 365, rotation: 180 },
-      { type: "square", x: 700, y: 365, rotation: 0 },
-      { type: "circle", x: 790, y: 365, rotation: 0 }
+      { type: "triangle", x: 95, y: 95, rotation: 180 },
+      { type: "square", x: 220, y: 150, rotation: 90 },
+      { type: "circle", x: 370, y: 95, rotation: 0 },
+      { type: "rectangle", x: 545, y: 110, rotation: 90 },
+      { type: "heart", x: 705, y: 95, rotation: 180 },
+      { type: "star", x: 815, y: 155, rotation: 0 },
+      { type: "circle", x: 645, y: 220, rotation: 0 },
+      { type: "triangle", x: 460, y: 185, rotation: 0 },
+      { type: "star", x: 120, y: 245, rotation: 180 },
+      { type: "triangle", x: 285, y: 245, rotation: 0 },
+      { type: "square", x: 410, y: 265, rotation: 0 },
+      { type: "rectangle", x: 565, y: 305, rotation: 0 },
+      { type: "heart", x: 760, y: 270, rotation: 180 },
+      { type: "triangle", x: 95, y: 355, rotation: 180 },
+      { type: "square", x: 230, y: 390, rotation: 90 },
+      { type: "circle", x: 365, y: 355, rotation: 0 },
+      { type: "star", x: 500, y: 390, rotation: 0 },
+      { type: "rectangle", x: 675, y: 385, rotation: 90 },
+      { type: "heart", x: 810, y: 365, rotation: 0 },
+      { type: "triangle", x: 340, y: 205, rotation: 180 },
+      { type: "square", x: 510, y: 235, rotation: 0 },
+      { type: "circle", x: 130, y: 165, rotation: 0 }
     ],
     snapDistance: 11,
     snapRotationTolerance: 11,
@@ -333,30 +333,30 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "triangle", x: 125, y: 150, rotation: 180 },
-      { type: "square", x: 210, y: 150, rotation: 90 },
-      { type: "circle", x: 295, y: 150, rotation: 0 },
-      { type: "rectangle", x: 380, y: 150, rotation: 90 },
-      { type: "heart", x: 465, y: 150, rotation: 180 },
-      { type: "star", x: 570, y: 150, rotation: 0 },
-      { type: "circle", x: 685, y: 150, rotation: 0 },
-      { type: "square", x: 775, y: 150, rotation: 0 },
-      { type: "star", x: 140, y: 255, rotation: 180 },
-      { type: "circle", x: 250, y: 255, rotation: 0 },
-      { type: "triangle", x: 345, y: 255, rotation: 0 },
-      { type: "square", x: 435, y: 255, rotation: 90 },
-      { type: "rectangle", x: 520, y: 255, rotation: 0 },
-      { type: "heart", x: 615, y: 255, rotation: 180 },
-      { type: "triangle", x: 710, y: 255, rotation: 180 },
-      { type: "star", x: 795, y: 255, rotation: 0 },
-      { type: "square", x: 130, y: 365, rotation: 0 },
-      { type: "star", x: 245, y: 365, rotation: 180 },
-      { type: "rectangle", x: 355, y: 365, rotation: 90 },
-      { type: "heart", x: 455, y: 365, rotation: 0 },
-      { type: "triangle", x: 560, y: 365, rotation: 180 },
-      { type: "square", x: 660, y: 365, rotation: 90 },
-      { type: "rectangle", x: 745, y: 365, rotation: 0 },
-      { type: "circle", x: 790, y: 365, rotation: 0 }
+      { type: "triangle", x: 95, y: 90, rotation: 180 },
+      { type: "square", x: 210, y: 130, rotation: 90 },
+      { type: "circle", x: 340, y: 95, rotation: 0 },
+      { type: "rectangle", x: 475, y: 135, rotation: 90 },
+      { type: "heart", x: 625, y: 95, rotation: 180 },
+      { type: "star", x: 770, y: 110, rotation: 0 },
+      { type: "circle", x: 810, y: 215, rotation: 0 },
+      { type: "square", x: 690, y: 250, rotation: 0 },
+      { type: "star", x: 520, y: 215, rotation: 180 },
+      { type: "circle", x: 360, y: 230, rotation: 0 },
+      { type: "triangle", x: 235, y: 260, rotation: 0 },
+      { type: "square", x: 115, y: 235, rotation: 90 },
+      { type: "rectangle", x: 95, y: 340, rotation: 0 },
+      { type: "heart", x: 250, y: 380, rotation: 180 },
+      { type: "triangle", x: 430, y: 370, rotation: 180 },
+      { type: "star", x: 575, y: 390, rotation: 0 },
+      { type: "square", x: 730, y: 380, rotation: 0 },
+      { type: "star", x: 815, y: 320, rotation: 180 },
+      { type: "rectangle", x: 620, y: 320, rotation: 90 },
+      { type: "heart", x: 470, y: 315, rotation: 0 },
+      { type: "triangle", x: 335, y: 330, rotation: 180 },
+      { type: "square", x: 210, y: 320, rotation: 90 },
+      { type: "rectangle", x: 770, y: 250, rotation: 0 },
+      { type: "circle", x: 620, y: 180, rotation: 0 }
     ],
     snapDistance: 10,
     snapRotationTolerance: 10,
@@ -493,6 +493,15 @@ const RECTANGLE_POINTS: [number, number][] = [
 const HEART_PATH_DATA =
   "M 0 60 C -18 40 -68 8 -68 -26 C -68 -48 -52 -64 -32 -64 C -20 -64 -8 -58 0 -46 C 8 -58 20 -64 32 -64 C 52 -64 68 -48 68 -26 C 68 8 18 40 0 60 Z";
 
+const shuffleShapeTypes = (types: ShapeType[]) => {
+  const next = [...types];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [next[i], next[randomIndex]] = [next[randomIndex], next[i]];
+  }
+  return next;
+};
+
 const getRotatedHalfExtents = (points: [number, number][], rotation: number) => {
   const angle = (rotation * Math.PI) / 180;
   const cos = Math.cos(angle);
@@ -579,6 +588,13 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
     }),
     [currentQuestion, shapeScale]
   );
+  const paletteShapesForCurrentMode = useMemo(() => {
+    if (!isQuizMode || difficulty !== "oni") return PALETTE_SHAPES;
+    // Questionが切り替わるたびに並びを再抽選するためのシード。
+    const seed = questionIndex;
+    void seed;
+    return shuffleShapeTypes(PALETTE_SHAPES);
+  }, [isQuizMode, difficulty, questionIndex]);
 
   const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
   const selectedShapeData = selectedShapeId
@@ -1257,7 +1273,7 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
         {isNarrowScreen && isQuizMode && (
           <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
         )}
-        {PALETTE_SHAPES.map((type) => {
+        {paletteShapesForCurrentMode.map((type) => {
           const isActiveForChange = isShapeSelected && selectedShapeData?.type === type;
           return (
             <button
