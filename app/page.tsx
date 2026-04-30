@@ -39,12 +39,12 @@ export default function HomePage() {
   return (
     <main
       style={{
-        minHeight: "100vh",
+        height: "100dvh",
         display: "grid",
         placeItems: "center",
         padding: "clamp(6px, 2vw, 16px)",
         boxSizing: "border-box",
-        overflowX: "hidden"
+        overflow: "hidden"
       }}
     >
       <section
