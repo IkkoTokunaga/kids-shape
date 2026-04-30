@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Konva from "konva";
-import { Layer, Stage, Circle, Rect, RegularPolygon, Line, Path, Group, Ellipse, Arc } from "react-konva";
+import { Layer, Stage, Circle, Rect, RegularPolygon, Line, Path, Group } from "react-konva";
 
 type ShapeType = "circle" | "square" | "triangle" | "heart" | "star" | "rectangle";
 type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni";
@@ -946,142 +946,6 @@ export default function ShapeStage({
 
   const paletteIconSize = isNarrowScreen ? 32 : 24;
 
-  const renderShapeFace = (shape: ShapeItem, isSmiling: boolean) => {
-    const faceColor = "#2a2f45";
-
-    if (shape.type === "circle") {
-      return (
-        <>
-          <Circle x={-18} y={-12} radius={6} fill={faceColor} listening={false} />
-          <Circle x={18} y={-12} radius={6} fill={faceColor} listening={false} />
-          {isSmiling ? (
-            <Arc
-              x={0}
-              y={12}
-              innerRadius={0}
-              outerRadius={18}
-              angle={120}
-              rotation={30}
-              stroke={faceColor}
-              strokeWidth={4}
-              listening={false}
-            />
-          ) : (
-            <Line points={[-18, 14, 18, 14]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
-          )}
-        </>
-      );
-    }
-
-    if (shape.type === "square") {
-      return (
-        <Group rotation={-shape.rotation} listening={false}>
-          <Rect x={-24} y={-16} width={10} height={10} cornerRadius={2} fill={faceColor} listening={false} />
-          <Rect x={14} y={-16} width={10} height={10} cornerRadius={2} fill={faceColor} listening={false} />
-          {isSmiling ? (
-            <Line points={[-20, 16, 0, 24, 20, 16]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
-          ) : (
-            <Line points={[-20, 18, 20, 18]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
-          )}
-        </Group>
-      );
-    }
-
-    if (shape.type === "triangle") {
-      return (
-        <>
-          <Circle x={-16} y={-6} radius={5} fill={faceColor} listening={false} />
-          <Circle x={16} y={-6} radius={5} fill={faceColor} listening={false} />
-          {isSmiling ? (
-            <Arc
-              x={0}
-              y={14}
-              innerRadius={0}
-              outerRadius={14}
-              angle={90}
-              rotation={45}
-              stroke={faceColor}
-              strokeWidth={4}
-              listening={false}
-            />
-          ) : (
-            <Line points={[-12, 16, 12, 16]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
-          )}
-        </>
-      );
-    }
-
-    if (shape.type === "heart") {
-      return (
-        <>
-          <Ellipse x={-14} y={-10} radiusX={4} radiusY={6} fill={faceColor} listening={false} />
-          <Ellipse x={14} y={-10} radiusX={4} radiusY={6} fill={faceColor} listening={false} />
-          {isSmiling ? (
-            <Arc
-              x={0}
-              y={18}
-              innerRadius={0}
-              outerRadius={12}
-              angle={120}
-              rotation={30}
-              stroke={faceColor}
-              strokeWidth={4}
-              listening={false}
-            />
-          ) : (
-            <Line points={[-12, 19, 12, 19]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
-          )}
-        </>
-      );
-    }
-
-    if (shape.type === "star") {
-      return (
-        <>
-          <Circle x={-18} y={-8} radius={5} fill={faceColor} listening={false} />
-          <Circle x={18} y={-8} radius={5} fill={faceColor} listening={false} />
-          {isSmiling ? (
-            <Arc
-              x={0}
-              y={12}
-              innerRadius={0}
-              outerRadius={12}
-              angle={120}
-              rotation={30}
-              stroke={faceColor}
-              strokeWidth={4}
-              listening={false}
-            />
-          ) : (
-            <Line points={[-16, 16, 16, 16]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
-          )}
-        </>
-      );
-    }
-
-    return (
-      <>
-        <Rect x={-22} y={-10} width={8} height={8} cornerRadius={2} fill={faceColor} listening={false} />
-        <Rect x={14} y={-10} width={8} height={8} cornerRadius={2} fill={faceColor} listening={false} />
-        {isSmiling ? (
-          <Arc
-            x={0}
-            y={12}
-            innerRadius={0}
-            outerRadius={12}
-            angle={140}
-            rotation={20}
-            stroke={faceColor}
-            strokeWidth={4}
-            listening={false}
-          />
-        ) : (
-          <Line points={[-12, 14, 12, 14]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
-        )}
-      </>
-    );
-  };
-
   const renderPaletteShape = (type: ShapeType) => {
     const color = SHAPE_COLORS[type];
     const iconSize = `${paletteIconSize}px`;
@@ -1519,7 +1383,6 @@ export default function ShapeStage({
             const shapeOpacity = 1;
             // くぼみにはまっている形はドラッグで動かせないようにする（ロック済みの形も同様）。
             const isDraggable = !shape.isLocked && !isShapeInSlot(shape);
-            const isSmiling = isShapeInSlot(shape);
             const selectionShadow = isSelected
               ? {
                   shadowColor: "#3853ff",
@@ -1560,7 +1423,6 @@ export default function ShapeStage({
                     strokeScaleEnabled={false}
                     {...selectionShadow}
                   />
-                  {renderShapeFace(shape, isSmiling)}
                 </Group>
               );
             }
@@ -1581,7 +1443,6 @@ export default function ShapeStage({
                     strokeScaleEnabled={false}
                     {...selectionShadow}
                   />
-                  {renderShapeFace(shape, isSmiling)}
                 </Group>
               );
             }
@@ -1598,7 +1459,6 @@ export default function ShapeStage({
                     strokeScaleEnabled={false}
                     {...selectionShadow}
                   />
-                  {renderShapeFace(shape, isSmiling)}
                 </Group>
               );
             }
@@ -1616,7 +1476,6 @@ export default function ShapeStage({
                     strokeScaleEnabled={false}
                     {...selectionShadow}
                   />
-                  {renderShapeFace(shape, isSmiling)}
                 </Group>
               );
             }
@@ -1634,7 +1493,6 @@ export default function ShapeStage({
                     strokeScaleEnabled={false}
                     {...selectionShadow}
                   />
-                  {renderShapeFace(shape, isSmiling)}
                 </Group>
               );
             }
@@ -1651,7 +1509,6 @@ export default function ShapeStage({
                   strokeScaleEnabled={false}
                   {...selectionShadow}
                 />
-                {renderShapeFace(shape, isSmiling)}
               </Group>
             );
                 })}
