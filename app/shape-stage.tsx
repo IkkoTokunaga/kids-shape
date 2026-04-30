@@ -458,6 +458,7 @@ type ShapeStageProps = {
 
 const BASE_STAGE_WIDTH = 900;
 const BASE_STAGE_HEIGHT = 500;
+const NARROW_STAGE_HEIGHT = 620;
 const NEXT_QUESTION_DELAY_MS = 1300;
 const EDGE_SAFE_PADDING = 10;
 // スマホ表示ではタップしやすいように図形とくぼみをすこし大きく見せる。
@@ -586,16 +587,17 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const visualStageWidth = Math.max(200, stageHostWidth);
   const reservedHeight = isNarrowScreen ? (isQuizMode ? 400 : 350) : (isQuizMode ? 340 : 300);
   const maxStageVisualHeight = Math.max(200, viewportHeight - reservedHeight);
+  const internalStageHeight = isNarrowScreen ? NARROW_STAGE_HEIGHT : BASE_STAGE_HEIGHT;
   const widthScale = visualStageWidth / BASE_STAGE_WIDTH;
-  const heightScale = maxStageVisualHeight / BASE_STAGE_HEIGHT;
+  const heightScale = maxStageVisualHeight / internalStageHeight;
   const stageScale = Math.min(1, widthScale, heightScale);
   const internalStageWidth = BASE_STAGE_WIDTH;
   const scaledStageWidth = Math.ceil(BASE_STAGE_WIDTH * stageScale);
-  const scaledStageHeight = Math.ceil(BASE_STAGE_HEIGHT * stageScale);
+  const scaledStageHeight = Math.ceil(internalStageHeight * stageScale);
   const visibleInternalWidth = scaledStageWidth / Math.max(stageScale, 0.01);
   const visibleInternalHeight = scaledStageHeight / Math.max(stageScale, 0.01);
   const boundedStageWidth = Math.min(internalStageWidth, visibleInternalWidth);
-  const boundedStageHeight = Math.min(BASE_STAGE_HEIGHT, visibleInternalHeight);
+  const boundedStageHeight = Math.min(internalStageHeight, visibleInternalHeight);
 
   useEffect(() => {
     if (!stageHostRef.current) return;
