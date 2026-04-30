@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Konva from "konva";
-import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
+import { Layer, Stage, Circle, Rect, RegularPolygon, Line, Path } from "react-konva";
 
-type ShapeType = "circle" | "square" | "triangle" | "trapezoid" | "parallelogram" | "diamond";
+type ShapeType = "circle" | "square" | "triangle" | "heart" | "star" | "rectangle";
 type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni";
 type QuizDifficulty = "easy" | "medium" | "hard" | "oni";
 
@@ -37,9 +37,9 @@ const SHAPE_COLORS: Record<ShapeType, string> = {
   circle: "#A8D8EA",
   square: "#FFF3B0",
   triangle: "#FFB7B2",
-  trapezoid: "#CDB4DB",
-  parallelogram: "#B8E1DD",
-  diamond: "#FFD166"
+  heart: "#CDB4DB",
+  star: "#B8E1DD",
+  rectangle: "#FFD166"
 };
 
 const COLOR_OPTIONS = [
@@ -55,9 +55,9 @@ const PALETTE_SHAPES: ShapeType[] = [
   "square",
   "triangle",
   "circle",
-  "trapezoid",
-  "parallelogram",
-  "diamond"
+  "heart",
+  "star",
+  "rectangle"
 ];
 
 const EASY_QUESTION_SETTINGS: QuestionSetting[] = [
@@ -91,9 +91,9 @@ const EASY_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "trapezoid", x: 600, y: 220 },
-      { type: "parallelogram", x: 740, y: 220 },
-      { type: "diamond", x: 660, y: 330 },
+      { type: "heart", x: 600, y: 220 },
+      { type: "star", x: 740, y: 220 },
+      { type: "rectangle", x: 660, y: 330 },
       { type: "circle", x: 800, y: 330 }
     ],
     snapDistance: 12,
@@ -106,8 +106,8 @@ const EASY_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "triangle", x: 580, y: 210 },
       { type: "square", x: 700, y: 210 },
       { type: "circle", x: 820, y: 210 },
-      { type: "parallelogram", x: 640, y: 330 },
-      { type: "diamond", x: 780, y: 330 }
+      { type: "star", x: 640, y: 330 },
+      { type: "rectangle", x: 780, y: 330 }
     ],
     snapDistance: 10,
     snapRotationTolerance: 10,
@@ -136,7 +136,7 @@ const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "trapezoid", x: 620, y: 230, rotation: 180 },
+      { type: "heart", x: 620, y: 230, rotation: 180 },
       { type: "triangle", x: 740, y: 230, rotation: 180 },
       { type: "circle", x: 680, y: 340, rotation: 0 }
     ],
@@ -147,8 +147,8 @@ const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "trapezoid", x: 600, y: 220, rotation: 180 },
-      { type: "parallelogram", x: 740, y: 220, rotation: 180 },
+      { type: "heart", x: 600, y: 220, rotation: 180 },
+      { type: "star", x: 740, y: 220, rotation: 180 },
       { type: "triangle", x: 660, y: 330, rotation: 180 },
       { type: "circle", x: 800, y: 330, rotation: 0 }
     ],
@@ -160,9 +160,9 @@ const MEDIUM_QUESTION_SETTINGS: QuestionSetting[] = [
   {
     targets: [
       { type: "triangle", x: 580, y: 210, rotation: 180 },
-      { type: "trapezoid", x: 700, y: 210, rotation: 180 },
+      { type: "heart", x: 700, y: 210, rotation: 180 },
       { type: "circle", x: 820, y: 210, rotation: 0 },
-      { type: "parallelogram", x: 640, y: 330, rotation: 180 },
+      { type: "star", x: 640, y: 330, rotation: 180 },
       { type: "triangle", x: 780, y: 330, rotation: 180 }
     ],
     snapDistance: 10,
@@ -186,9 +186,9 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
   },
   {
     targets: [
-      { type: "trapezoid", x: 560, y: 210, rotation: 180 },
-      { type: "parallelogram", x: 690, y: 210, rotation: 180 },
-      { type: "diamond", x: 820, y: 210, rotation: 90 },
+      { type: "heart", x: 560, y: 210, rotation: 180 },
+      { type: "star", x: 690, y: 210, rotation: 180 },
+      { type: "rectangle", x: 820, y: 210, rotation: 90 },
       { type: "square", x: 620, y: 330, rotation: 90 },
       { type: "triangle", x: 760, y: 330, rotation: 180 }
     ],
@@ -201,10 +201,10 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
     targets: [
       { type: "circle", x: 500, y: 210, rotation: 0 },
       { type: "square", x: 620, y: 210, rotation: 90 },
-      { type: "diamond", x: 740, y: 210, rotation: 90 },
+      { type: "rectangle", x: 740, y: 210, rotation: 90 },
       { type: "triangle", x: 820, y: 210, rotation: 180 },
-      { type: "parallelogram", x: 600, y: 330, rotation: 180 },
-      { type: "trapezoid", x: 760, y: 330, rotation: 180 }
+      { type: "star", x: 600, y: 330, rotation: 180 },
+      { type: "heart", x: 760, y: 330, rotation: 180 }
     ],
     snapDistance: 14,
     snapRotationTolerance: 14,
@@ -216,9 +216,9 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "triangle", x: 490, y: 200, rotation: 180 },
       { type: "square", x: 600, y: 200, rotation: 90 },
       { type: "circle", x: 710, y: 200, rotation: 0 },
-      { type: "diamond", x: 820, y: 200, rotation: 90 },
-      { type: "parallelogram", x: 570, y: 330, rotation: 180 },
-      { type: "trapezoid", x: 700, y: 330, rotation: 180 },
+      { type: "rectangle", x: 820, y: 200, rotation: 90 },
+      { type: "star", x: 570, y: 330, rotation: 180 },
+      { type: "heart", x: 700, y: 330, rotation: 180 },
       { type: "square", x: 820, y: 330, rotation: 90 }
     ],
     snapDistance: 12,
@@ -231,9 +231,9 @@ const HARD_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "circle", x: 420, y: 190, rotation: 0 },
       { type: "triangle", x: 520, y: 190, rotation: 180 },
       { type: "square", x: 620, y: 190, rotation: 90 },
-      { type: "diamond", x: 720, y: 190, rotation: 90 },
-      { type: "trapezoid", x: 820, y: 190, rotation: 180 },
-      { type: "parallelogram", x: 540, y: 320, rotation: 180 },
+      { type: "rectangle", x: 720, y: 190, rotation: 90 },
+      { type: "heart", x: 820, y: 190, rotation: 180 },
+      { type: "star", x: 540, y: 320, rotation: 180 },
       { type: "square", x: 660, y: 320, rotation: 90 },
       { type: "triangle", x: 780, y: 320, rotation: 180 }
     ],
@@ -253,15 +253,15 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "triangle", x: 150, y: 200, rotation: 180 },
       { type: "square", x: 245, y: 200, rotation: 90 },
       { type: "circle", x: 335, y: 200, rotation: 0 },
-      { type: "diamond", x: 420, y: 200, rotation: 90 },
-      { type: "trapezoid", x: 510, y: 200, rotation: 180 },
-      { type: "parallelogram", x: 610, y: 200, rotation: 0 },
+      { type: "rectangle", x: 420, y: 200, rotation: 90 },
+      { type: "heart", x: 510, y: 200, rotation: 180 },
+      { type: "star", x: 610, y: 200, rotation: 0 },
       { type: "square", x: 720, y: 200, rotation: 0 },
-      { type: "parallelogram", x: 175, y: 335, rotation: 180 },
+      { type: "star", x: 175, y: 335, rotation: 180 },
       { type: "circle", x: 290, y: 335, rotation: 0 },
       { type: "triangle", x: 390, y: 335, rotation: 0 },
-      { type: "diamond", x: 490, y: 335, rotation: 0 },
-      { type: "trapezoid", x: 600, y: 335, rotation: 0 },
+      { type: "rectangle", x: 490, y: 335, rotation: 0 },
+      { type: "heart", x: 600, y: 335, rotation: 0 },
       { type: "triangle", x: 705, y: 335, rotation: 180 }
     ],
     snapDistance: 16,
@@ -274,17 +274,17 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "triangle", x: 140, y: 175, rotation: 180 },
       { type: "square", x: 235, y: 175, rotation: 90 },
       { type: "circle", x: 325, y: 175, rotation: 0 },
-      { type: "diamond", x: 410, y: 175, rotation: 90 },
-      { type: "trapezoid", x: 505, y: 175, rotation: 180 },
-      { type: "parallelogram", x: 610, y: 175, rotation: 0 },
+      { type: "rectangle", x: 410, y: 175, rotation: 90 },
+      { type: "heart", x: 505, y: 175, rotation: 180 },
+      { type: "star", x: 610, y: 175, rotation: 0 },
       { type: "circle", x: 710, y: 175, rotation: 0 },
       { type: "square", x: 795, y: 175, rotation: 0 },
-      { type: "parallelogram", x: 155, y: 315, rotation: 180 },
+      { type: "star", x: 155, y: 315, rotation: 180 },
       { type: "circle", x: 270, y: 315, rotation: 0 },
       { type: "triangle", x: 370, y: 315, rotation: 0 },
       { type: "square", x: 465, y: 315, rotation: 90 },
-      { type: "diamond", x: 555, y: 315, rotation: 0 },
-      { type: "trapezoid", x: 660, y: 315, rotation: 0 },
+      { type: "rectangle", x: 555, y: 315, rotation: 0 },
+      { type: "heart", x: 660, y: 315, rotation: 0 },
       { type: "triangle", x: 770, y: 315, rotation: 180 }
     ],
     snapDistance: 14,
@@ -297,21 +297,21 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "triangle", x: 135, y: 160, rotation: 180 },
       { type: "square", x: 230, y: 160, rotation: 90 },
       { type: "circle", x: 320, y: 160, rotation: 0 },
-      { type: "diamond", x: 405, y: 160, rotation: 90 },
-      { type: "trapezoid", x: 500, y: 160, rotation: 180 },
-      { type: "parallelogram", x: 605, y: 160, rotation: 0 },
-      { type: "parallelogram", x: 160, y: 265, rotation: 180 },
+      { type: "rectangle", x: 405, y: 160, rotation: 90 },
+      { type: "heart", x: 500, y: 160, rotation: 180 },
+      { type: "star", x: 605, y: 160, rotation: 0 },
+      { type: "star", x: 160, y: 265, rotation: 180 },
       { type: "triangle", x: 270, y: 265, rotation: 0 },
       { type: "square", x: 365, y: 265, rotation: 0 },
-      { type: "diamond", x: 455, y: 265, rotation: 0 },
+      { type: "rectangle", x: 455, y: 265, rotation: 0 },
       { type: "circle", x: 550, y: 265, rotation: 0 },
-      { type: "trapezoid", x: 655, y: 265, rotation: 180 },
+      { type: "heart", x: 655, y: 265, rotation: 180 },
       { type: "triangle", x: 760, y: 265, rotation: 180 },
       { type: "circle", x: 195, y: 370, rotation: 0 },
       { type: "square", x: 300, y: 370, rotation: 90 },
-      { type: "parallelogram", x: 420, y: 370, rotation: 0 },
-      { type: "diamond", x: 530, y: 370, rotation: 90 },
-      { type: "trapezoid", x: 630, y: 370, rotation: 0 },
+      { type: "star", x: 420, y: 370, rotation: 0 },
+      { type: "rectangle", x: 530, y: 370, rotation: 90 },
+      { type: "heart", x: 630, y: 370, rotation: 0 },
       { type: "triangle", x: 725, y: 370, rotation: 0 }
     ],
     snapDistance: 12,
@@ -324,22 +324,22 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "triangle", x: 130, y: 155, rotation: 180 },
       { type: "square", x: 215, y: 155, rotation: 90 },
       { type: "circle", x: 305, y: 155, rotation: 0 },
-      { type: "diamond", x: 390, y: 155, rotation: 90 },
-      { type: "trapezoid", x: 480, y: 155, rotation: 180 },
-      { type: "parallelogram", x: 585, y: 155, rotation: 0 },
+      { type: "rectangle", x: 390, y: 155, rotation: 90 },
+      { type: "heart", x: 480, y: 155, rotation: 180 },
+      { type: "star", x: 585, y: 155, rotation: 0 },
       { type: "circle", x: 700, y: 155, rotation: 0 },
       { type: "triangle", x: 790, y: 155, rotation: 0 },
-      { type: "parallelogram", x: 145, y: 260, rotation: 180 },
+      { type: "star", x: 145, y: 260, rotation: 180 },
       { type: "triangle", x: 255, y: 260, rotation: 0 },
       { type: "square", x: 350, y: 260, rotation: 0 },
-      { type: "diamond", x: 440, y: 260, rotation: 0 },
-      { type: "trapezoid", x: 540, y: 260, rotation: 180 },
+      { type: "rectangle", x: 440, y: 260, rotation: 0 },
+      { type: "heart", x: 540, y: 260, rotation: 180 },
       { type: "triangle", x: 645, y: 260, rotation: 180 },
       { type: "square", x: 755, y: 260, rotation: 90 },
       { type: "circle", x: 160, y: 365, rotation: 0 },
-      { type: "parallelogram", x: 275, y: 365, rotation: 0 },
-      { type: "diamond", x: 390, y: 365, rotation: 90 },
-      { type: "trapezoid", x: 495, y: 365, rotation: 0 },
+      { type: "star", x: 275, y: 365, rotation: 0 },
+      { type: "rectangle", x: 390, y: 365, rotation: 90 },
+      { type: "heart", x: 495, y: 365, rotation: 0 },
       { type: "triangle", x: 600, y: 365, rotation: 180 },
       { type: "square", x: 700, y: 365, rotation: 0 },
       { type: "circle", x: 790, y: 365, rotation: 0 }
@@ -354,26 +354,26 @@ const ONI_QUESTION_SETTINGS: QuestionSetting[] = [
       { type: "triangle", x: 125, y: 150, rotation: 180 },
       { type: "square", x: 210, y: 150, rotation: 90 },
       { type: "circle", x: 295, y: 150, rotation: 0 },
-      { type: "diamond", x: 380, y: 150, rotation: 90 },
-      { type: "trapezoid", x: 465, y: 150, rotation: 180 },
-      { type: "parallelogram", x: 570, y: 150, rotation: 0 },
+      { type: "rectangle", x: 380, y: 150, rotation: 90 },
+      { type: "heart", x: 465, y: 150, rotation: 180 },
+      { type: "star", x: 570, y: 150, rotation: 0 },
       { type: "circle", x: 685, y: 150, rotation: 0 },
       { type: "square", x: 775, y: 150, rotation: 0 },
-      { type: "parallelogram", x: 140, y: 255, rotation: 180 },
+      { type: "star", x: 140, y: 255, rotation: 180 },
       { type: "circle", x: 250, y: 255, rotation: 0 },
       { type: "triangle", x: 345, y: 255, rotation: 0 },
       { type: "square", x: 435, y: 255, rotation: 90 },
-      { type: "diamond", x: 520, y: 255, rotation: 0 },
-      { type: "trapezoid", x: 615, y: 255, rotation: 180 },
+      { type: "rectangle", x: 520, y: 255, rotation: 0 },
+      { type: "heart", x: 615, y: 255, rotation: 180 },
       { type: "triangle", x: 710, y: 255, rotation: 180 },
-      { type: "parallelogram", x: 795, y: 255, rotation: 0 },
+      { type: "star", x: 795, y: 255, rotation: 0 },
       { type: "square", x: 130, y: 365, rotation: 0 },
-      { type: "parallelogram", x: 245, y: 365, rotation: 180 },
-      { type: "diamond", x: 355, y: 365, rotation: 90 },
-      { type: "trapezoid", x: 455, y: 365, rotation: 0 },
+      { type: "star", x: 245, y: 365, rotation: 180 },
+      { type: "rectangle", x: 355, y: 365, rotation: 90 },
+      { type: "heart", x: 455, y: 365, rotation: 0 },
       { type: "triangle", x: 560, y: 365, rotation: 180 },
       { type: "square", x: 660, y: 365, rotation: 90 },
-      { type: "diamond", x: 745, y: 365, rotation: 0 },
+      { type: "rectangle", x: 745, y: 365, rotation: 0 },
       { type: "circle", x: 790, y: 365, rotation: 0 }
     ],
     snapDistance: 10,
@@ -390,8 +390,9 @@ const getNormalizedRotation = (rotation: number) => {
 
 const getSymmetryStep = (type: ShapeType) => {
   if (type === "circle") return 360;
-  if (type === "square" || type === "diamond") return 90;
-  if (type === "parallelogram") return 180;
+  if (type === "square") return 90;
+  if (type === "rectangle") return 180;
+  if (type === "star") return 180;
   return 360;
 };
 
@@ -463,7 +464,7 @@ const CORRECT_POPUP_DELAY_MS = 500;
 const NEXT_QUESTION_DELAY_MS = 1300;
 const EDGE_SAFE_PADDING = 10;
 // スマホ表示ではタップしやすいように図形とくぼみをすこし大きく見せる。
-// 既存のターゲット座標が可動領域からはみ出さない限界まで拡大（特に HARD Q4 の diamond rot90 x=820 がタイト）。
+// 既存のターゲット座標が可動領域からはみ出さない限界まで拡大（特に HARD Q4 の rectangle rot90 x=820 がタイト）。
 const NARROW_SHAPE_SCALE = 1.2;
 const NARROW_EDGE_SAFE_PADDING = 0;
 const SNAP_SOUND_FILE_URL = "/sounds/peta.mp3";
@@ -478,24 +479,36 @@ const SQUARE_POINTS: [number, number][] = [
   [60, 60],
   [-60, 60]
 ];
-const TRAPEZOID_POINTS: [number, number][] = [
-  [-60, 48],
-  [60, 48],
-  [36, -48],
-  [-36, -48]
+const HEART_POINTS: [number, number][] = [
+  [0, 64],
+  [52, 10],
+  [46, -28],
+  [22, -52],
+  [0, -34],
+  [-22, -52],
+  [-46, -28],
+  [-52, 10]
 ];
-const PARALLELOGRAM_POINTS: [number, number][] = [
-  [-45, -48],
-  [75, -48],
-  [45, 48],
-  [-75, 48]
-];
-const DIAMOND_POINTS: [number, number][] = [
+const STAR_POINTS: [number, number][] = [
   [0, -66],
-  [58, 0],
-  [0, 66],
-  [-58, 0]
+  [15, -20],
+  [58, -20],
+  [24, 6],
+  [36, 52],
+  [0, 24],
+  [-36, 52],
+  [-24, 6],
+  [-58, -20],
+  [-15, -20]
 ];
+const RECTANGLE_POINTS: [number, number][] = [
+  [-72, -44],
+  [72, -44],
+  [72, 44],
+  [-72, 44]
+];
+const HEART_PATH_DATA =
+  "M 0 60 C -18 40 -68 8 -68 -26 C -68 -48 -52 -64 -32 -64 C -20 -64 -8 -58 0 -46 C 8 -58 20 -64 32 -64 C 52 -64 68 -48 68 -26 C 68 8 18 40 0 60 Z";
 
 const getRotatedHalfExtents = (points: [number, number][], rotation: number) => {
   const angle = (rotation * Math.PI) / 180;
@@ -523,11 +536,11 @@ const getShapeHalfExtents = (type: ShapeType, rotation: number, scale = 1) => {
         ? getRotatedHalfExtents(SQUARE_POINTS, rotation)
         : type === "triangle"
           ? getRotatedHalfExtents(TRIANGLE_POINTS, rotation)
-          : type === "trapezoid"
-            ? getRotatedHalfExtents(TRAPEZOID_POINTS, rotation)
-            : type === "parallelogram"
-              ? getRotatedHalfExtents(PARALLELOGRAM_POINTS, rotation)
-              : getRotatedHalfExtents(DIAMOND_POINTS, rotation);
+          : type === "heart"
+            ? getRotatedHalfExtents(HEART_POINTS, rotation)
+            : type === "star"
+              ? getRotatedHalfExtents(STAR_POINTS, rotation)
+              : getRotatedHalfExtents(RECTANGLE_POINTS, rotation);
   return { halfWidth: base.halfWidth * scale, halfHeight: base.halfHeight * scale };
 };
 
@@ -940,16 +953,28 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       );
     }
 
-    if (type === "trapezoid") {
-      return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="20,76 80,76 66,30 34,30" fill={color} /></svg>;
+    if (type === "heart") {
+      return (
+        <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden>
+          <path d="M50 86 C38 74 18 59 18 39 C18 25 29 16 40 16 C46 16 52 19 50 26 C48 19 54 16 60 16 C71 16 82 25 82 39 C82 59 62 74 50 86 Z" fill={color} />
+        </svg>
+      );
     }
 
-    if (type === "parallelogram") {
-      return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="30,24 84,24 70,76 16,76" fill={color} /></svg>;
+    if (type === "star") {
+      return (
+        <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden>
+          <polygon points="50,10 61,38 90,38 67,56 76,86 50,68 24,86 33,56 10,38 39,38" fill={color} />
+        </svg>
+      );
     }
 
-    if (type === "diamond") {
-      return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="50,14 84,50 50,86 16,50" fill={color} /></svg>;
+    if (type === "rectangle") {
+      return (
+        <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden>
+          <rect x="12" y="28" width="76" height="44" rx="6" fill={color} />
+        </svg>
+      );
     }
 
     return <svg width={paletteIconSize} height={paletteIconSize} viewBox="0 0 100 100" aria-hidden><polygon points="50,16 84,76 16,76" fill={color} /></svg>;
@@ -991,39 +1016,38 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       );
     }
 
-    if (target.type === "trapezoid") {
+    if (target.type === "heart") {
+      return (
+        <Path
+          key={key}
+          x={target.x}
+          y={target.y}
+          data={HEART_PATH_DATA}
+          {...sharedProps}
+        />
+      );
+    }
+
+    if (target.type === "star") {
       return (
         <Line
           key={key}
           x={target.x}
           y={target.y}
-          points={[-60, 48, 60, 48, 36, -48, -36, -48]}
+          points={STAR_POINTS.flat()}
           closed
           {...sharedProps}
         />
       );
     }
 
-    if (target.type === "parallelogram") {
+    if (target.type === "rectangle") {
       return (
         <Line
           key={key}
           x={target.x}
           y={target.y}
-          points={[-45, -48, 75, -48, 45, 48, -75, 48]}
-          closed
-          {...sharedProps}
-        />
-      );
-    }
-
-    if (target.type === "diamond") {
-      return (
-        <Line
-          key={key}
-          x={target.x}
-          y={target.y}
-          points={[0, -66, 58, 0, 0, 66, -58, 0]}
+          points={RECTANGLE_POINTS.flat()}
           closed
           {...sharedProps}
         />
@@ -1578,22 +1602,45 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               );
             }
 
-            if (shape.type === "trapezoid") {
+            if (shape.type === "heart") {
+              return (
+                <Path
+                  key={shape.id}
+                  x={shape.x}
+                  y={shape.y}
+                  data={HEART_PATH_DATA}
+                  rotation={shape.rotation}
+                  fill={shape.color}
+                  stroke={shapeStroke}
+                  strokeWidth={shapeStrokeWidth}
+                  opacity={shapeOpacity}
+                  {...scaleProps}
+                  {...selectionShadow}
+                  draggable={isDraggable}
+                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
+                  onDragStart={(e) => {
+                    setSelectedShapeId(null);
+                    if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
+                  }}
+                  onDragEnd={(e) => {
+                    if (e.target instanceof Konva.Shape) {
+                      animateDragging(e.target, false);
+                      handleDragEndById(shape.id, e.target.x(), e.target.y());
+                    }
+                  }}
+                  onClick={() => handleShapeTap(shape.id)}
+                  onTap={() => handleShapeTap(shape.id)}
+                />
+              );
+            }
+
+            if (shape.type === "star") {
               return (
                 <Line
                   key={shape.id}
                   x={shape.x}
                   y={shape.y}
-                  points={[
-                    -60,
-                    48,
-                    60,
-                    48,
-                    36,
-                    -48,
-                    -36,
-                    -48
-                  ]}
+                  points={STAR_POINTS.flat()}
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
@@ -1620,64 +1667,13 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               );
             }
 
-            if (shape.type === "parallelogram") {
+            if (shape.type === "rectangle") {
               return (
                 <Line
                   key={shape.id}
                   x={shape.x}
                   y={shape.y}
-                  points={[
-                    -45,
-                    -48,
-                    75,
-                    -48,
-                    45,
-                    48,
-                    -75,
-                    48
-                  ]}
-                  rotation={shape.rotation}
-                  fill={shape.color}
-                  closed
-                  stroke={shapeStroke}
-                  strokeWidth={shapeStrokeWidth}
-                  opacity={shapeOpacity}
-                  {...scaleProps}
-                  {...selectionShadow}
-                  draggable={isDraggable}
-                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
-                  onDragStart={(e) => {
-                    setSelectedShapeId(null);
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
-                  }}
-                  onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) {
-                      animateDragging(e.target, false);
-                      handleDragEndById(shape.id, e.target.x(), e.target.y());
-                    }
-                  }}
-                  onClick={() => handleShapeTap(shape.id)}
-                  onTap={() => handleShapeTap(shape.id)}
-                />
-              );
-            }
-
-            if (shape.type === "diamond") {
-              return (
-                <Line
-                  key={shape.id}
-                  x={shape.x}
-                  y={shape.y}
-                  points={[
-                    0,
-                    -66,
-                    58,
-                    0,
-                    0,
-                    66,
-                    -58,
-                    0
-                  ]}
+                  points={RECTANGLE_POINTS.flat()}
                   rotation={shape.rotation}
                   fill={shape.color}
                   closed
