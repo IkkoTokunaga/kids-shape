@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Konva from "konva";
 import { Layer, Stage, Circle, Rect, RegularPolygon, Line } from "react-konva";
 
@@ -569,11 +569,14 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
   const shapeScale = isNarrowScreen ? NARROW_SHAPE_SCALE : 1;
   const edgeSafePadding = isNarrowScreen ? NARROW_EDGE_SAFE_PADDING : EDGE_SAFE_PADDING;
   // 図形とくぼみを拡大しても同じ相対感覚で吸着/判定できるよう距離系だけスケールする。
-  const scaledCurrentQuestion: QuestionSetting = {
-    ...currentQuestion,
-    snapDistance: currentQuestion.snapDistance * shapeScale,
-    judgeDistance: currentQuestion.judgeDistance * shapeScale
-  };
+  const scaledCurrentQuestion: QuestionSetting = useMemo(
+    () => ({
+      ...currentQuestion,
+      snapDistance: currentQuestion.snapDistance * shapeScale,
+      judgeDistance: currentQuestion.judgeDistance * shapeScale
+    }),
+    [currentQuestion, shapeScale]
+  );
 
   const unmatchedTargets = currentQuestion.targets.filter((_, idx) => !matchedTargetIndices.includes(idx));
   const selectedShapeData = selectedShapeId
@@ -691,7 +694,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     };
   }, []);
 
-  const getOrCreateAudio = async () => {
+  const getOrCreateAudio = useCallback(async () => {
     if (!audioContextRef.current) {
       const AudioCtx =
         window.AudioContext ||
@@ -712,9 +715,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     }
 
     return { context: audioContextRef.current, masterGain: masterGainRef.current };
-  };
+  }, []);
 
-  const playSuccessSound = async (level: 1 | 2) => {
+  const playSuccessSound = useCallback(async (level: 1 | 2) => {
     const audio = await getOrCreateAudio();
     if (!audio || !audio.masterGain) return;
     const { context, masterGain } = audio;
@@ -739,9 +742,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       oscillator.start(startAt);
       oscillator.stop(stopAt);
     });
-  };
+  }, [getOrCreateAudio]);
 
-  const playSnapSynth = () => {
+  const playSnapSynth = useCallback(() => {
     const context = audioContextRef.current;
     const masterGain = masterGainRef.current;
     if (!context || !masterGain) {
@@ -795,9 +798,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     pop.stop(now + 0.115);
     air.start(now + 0.008);
     air.stop(now + 0.1);
-  };
+  }, []);
 
-  const playSnapSound = () => {
+  const playSnapSound = useCallback(() => {
     const snapAudio = snapAudioRef.current;
     if (snapAudio) {
       snapAudio.currentTime = 0;
@@ -808,7 +811,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     }
 
     playSnapSynth();
-  };
+  }, [playSnapSynth]);
 
   const animateDragging = (target: Konva.Shape, active: boolean) => {
     if (active) {
@@ -1094,9 +1097,9 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     );
   };
 
-  const judgeByOkButton = () => {
+  useEffect(() => {
     if (!isQuizMode) return;
-    if (isAllSolved) return;
+    if (isAllSolved || judgeResult === "correct" || showCorrectPopup) return;
 
     const usedShapeIds = new Set<string>();
     const nextMatchedIndices: number[] = [];
@@ -1115,10 +1118,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       nextMatchedIndices.push(targetIndex);
     });
 
-    if (nextMatchedIndices.length === 0) {
-      setJudgeResult("wrong");
-      return;
-    }
+    if (nextMatchedIndices.length === 0) return;
 
     setShapes((currentShapes) =>
       currentShapes.map((shape) => {
@@ -1145,8 +1145,6 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
     const isLastQuestion = questionIndex === questionSettings.length - 1;
 
     if (!isQuestionSolved) {
-      // Partial match: lock the correctly placed pieces but keep the question going.
-      // Avoid the full "correct" celebration until every slot is filled.
       playSnapSound();
       setJudgeResult("idle");
       return;
@@ -1169,7 +1167,20 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
       setMatchedTargetIndices([]);
       setJudgeResult("idle");
     }, NEXT_QUESTION_DELAY_MS);
-  };
+  }, [
+    isQuizMode,
+    isAllSolved,
+    judgeResult,
+    showCorrectPopup,
+    shapes,
+    currentQuestion.targets,
+    matchedTargetIndices,
+    scaledCurrentQuestion,
+    questionIndex,
+    questionSettings.length,
+    playSnapSound,
+    playSuccessSound
+  ]);
 
   const clearScreen = () => {
     setShapes([]);
@@ -1402,7 +1413,7 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
               ? "せいかい！ ぴったりはまったね 🎉"
               : judgeResult === "wrong"
                 ? "まだちがうよ。位置と向きをもう少し合わせてみよう"
-                : `くぼみに合う形を置いて、OKを押して判定しよう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : difficulty === "hard" ? "難" : "鬼"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
+                : `くぼみに合う形を置こう（${difficulty === "easy" ? "易" : difficulty === "medium" ? "中" : difficulty === "hard" ? "難" : "鬼"} ${questionIndex + 1}/${questionSettings.length}・残り${currentQuestion.targets.length - matchedTargetIndices.length}こ）`}
       </p>
       <div ref={stageHostRef} style={{ display: "flex", justifyContent: "center", width: "100%", minWidth: 0 }}>
         <div style={{ width: scaledStageWidth, height: scaledStageHeight, position: "relative", overflow: "hidden", borderRadius: "16px", touchAction: "none" }}>
@@ -1702,28 +1713,6 @@ export default function ShapeStage({ mode }: ShapeStageProps) {
           </Stage>
         </div>
       </div>
-      {isQuizMode && (
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <button
-            type="button"
-            onClick={judgeByOkButton}
-            disabled={judgeResult === "correct" || isAllSolved}
-            style={{
-              border: "none",
-              background: judgeResult === "correct" || isAllSolved ? "#a9b2d1" : "#3853ff",
-              color: "#ffffff",
-              borderRadius: "12px",
-              padding: isNarrowScreen ? "16px 40px" : "12px 26px",
-              fontWeight: 700,
-              fontSize: isNarrowScreen ? "1.1rem" : "1rem",
-              cursor: judgeResult === "correct" || isAllSolved ? "default" : "pointer",
-              minWidth: isNarrowScreen ? "140px" : undefined
-            }}
-          >
-            OK
-          </button>
-        </div>
-      )}
     </div>
   );
 }
