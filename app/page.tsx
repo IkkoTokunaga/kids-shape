@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Image from "next/image";
 import ShapeStageClient from "./shape-stage-client";
 
 type QuizDifficulty = "easy" | "medium" | "hard" | "oni";
@@ -127,15 +128,16 @@ export default function HomePage() {
                 }}
                 style={{
                   width: "fit-content",
-                  border: "1px solid #c6cce0",
+                  border: "none",
                   background: "#ffffff",
                   borderRadius: "10px",
-                  padding: "8px 12px",
+                  padding: 0,
                   cursor: "pointer",
-                  fontWeight: 700
+                  lineHeight: 0
                 }}
+                aria-label="TOPへ戻る"
               >
-                ← TOPに戻る
+                <Image src="/logo.png" alt="かたち ロゴ" width={180} height={98} priority />
               </button>
               {selectedMode !== "free" &&
                 (["easy", "medium", "hard", "oni"] as const).map((difficulty) => {
