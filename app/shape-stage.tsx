@@ -438,6 +438,8 @@ const findNearestSlot = (
 type ShapeStageProps = {
   mode: StageMode;
   onQuizComplete?: () => void;
+  onQuestionProgressChange?: (current: number, total: number) => void;
+  clearRequestKey?: number;
 };
 
 const BASE_STAGE_WIDTH = 900;
@@ -536,7 +538,12 @@ const getShapeHalfExtents = (type: ShapeType, rotation: number, scale = 1) => {
   return { halfWidth: base.halfWidth * scale, halfHeight: base.halfHeight * scale };
 };
 
-export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
+export default function ShapeStage({
+  mode,
+  onQuizComplete,
+  onQuestionProgressChange,
+  clearRequestKey
+}: ShapeStageProps) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [recentlyAddedShape, setRecentlyAddedShape] = useState<ShapeType | null>(null);
   const recentlyAddedShapeTimerRef = useRef<number | null>(null);
@@ -688,6 +695,24 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
   useEffect(() => {
     setSelectedShapeId(null);
   }, [questionIndex]);
+
+  useEffect(() => {
+    if (!isQuizMode) {
+      onQuestionProgressChange?.(0, 0);
+      return;
+    }
+    onQuestionProgressChange?.(questionIndex + 1, questionSettings.length);
+  }, [isQuizMode, onQuestionProgressChange, questionIndex, questionSettings.length]);
+
+  useEffect(() => {
+    if (clearRequestKey === undefined) return;
+    setShapes([]);
+    setSelectedShapeId(null);
+    if (isQuizMode && !isAllSolved) {
+      setMatchedTargetIndices([]);
+      setJudgeResult("idle");
+    }
+  }, [clearRequestKey, isAllSolved, isQuizMode]);
 
   useEffect(() => {
     if (!selectedShapeId) return;
@@ -1235,208 +1260,8 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
     playSuccessSound
   ]);
 
-  const clearScreen = () => {
-    setShapes([]);
-    setSelectedShapeId(null);
-    if (isQuizMode && !isAllSolved) {
-      setMatchedTargetIndices([]);
-      setJudgeResult("idle");
-    }
-  };
-
   return (
     <div style={{ display: "grid", gap: "12px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          columnGap: isNarrowScreen ? "6px" : "10px",
-          rowGap: "8px",
-          padding: isNarrowScreen ? "8px" : "10px",
-          borderRadius: "12px",
-          background: "#f4f6ff"
-        }}
-      >
-        {isQuizMode && (
-          <span
-            style={{
-              fontWeight: 700,
-              color: "#44506b",
-              minWidth: isNarrowScreen ? "52px" : "68px",
-              fontSize: isNarrowScreen ? "0.85rem" : "1rem"
-            }}
-          >
-            {`第${questionIndex + 1}問`}
-          </span>
-        )}
-        {isNarrowScreen && isQuizMode && (
-          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
-        )}
-        {paletteShapesForCurrentMode.map((type) => {
-          const isActiveForChange = isShapeSelected && selectedShapeData?.type === type;
-          return (
-            <button
-              key={type}
-              type="button"
-              onClick={() => {
-                if (applyTypeToSelected(type)) return;
-                const colorToUse =
-                  selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
-                addShape(type, colorToUse);
-                flashRecentlyAddedShape(type);
-              }}
-              aria-label={isShapeSelected ? `選択中の形を ${type} に変更` : `${type} を追加`}
-              style={{
-                border: isActiveForChange
-                  ? "2px solid #3853ff"
-                  : recentlyAddedShape === type && !isShapeSelected
-                  ? "2px solid #5470ff"
-                  : "1px solid #c6cce0",
-                background: "#ffffff",
-                borderRadius: "12px",
-                padding: isNarrowScreen ? "8px" : "10px",
-                fontSize: "0.9rem",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: isNarrowScreen ? "54px" : "48px",
-                height: isNarrowScreen ? "54px" : "48px"
-              }}
-            >
-              {renderPaletteShape(type)}
-            </button>
-          );
-        })}
-        {isNarrowScreen && (
-          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
-        )}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: isNarrowScreen ? "4px" : "8px",
-            marginLeft: isNarrowScreen ? "0" : "4px",
-            flexWrap: "wrap"
-          }}
-        >
-          {COLOR_OPTIONS.map((color) => {
-            const isActiveForChange = isShapeSelected && selectedShapeData?.color === color;
-            return (
-              <button
-                key={color}
-                type="button"
-                onClick={() => {
-                  if (applyColorToSelected(color)) return;
-                  setSelectedColor((current) => (current === color ? null : color));
-                }}
-                aria-label={isShapeSelected ? `選択中の形の色を変更` : `色 ${color} を選択`}
-                style={{
-                  width: isNarrowScreen ? "38px" : "28px",
-                  height: isNarrowScreen ? "38px" : "28px",
-                  borderRadius: "999px",
-                  border: isActiveForChange
-                    ? "3px solid #3853ff"
-                    : selectedColor === color && !isShapeSelected
-                    ? "3px solid #1f2b52"
-                    : "1px solid #8a93b2",
-                  background: color,
-                  cursor: "pointer",
-                  boxSizing: "border-box",
-                  padding: 0
-                }}
-              />
-            );
-          })}
-        </div>
-        {isNarrowScreen && (
-          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
-        )}
-        <button
-          type="button"
-          onClick={rotateSelected}
-          disabled={!isShapeSelected}
-          aria-label="選択中の形を回転"
-          title="回転"
-          style={{
-            border: "1px solid #c6cce0",
-            background: isShapeSelected ? "#e8efff" : "#f2f4fb",
-            color: isShapeSelected ? "#1f2b52" : "#a3a9bf",
-            borderRadius: "10px",
-            padding: isNarrowScreen ? "12px 14px" : "8px 10px",
-            fontWeight: 700,
-            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
-            cursor: isShapeSelected ? "pointer" : "not-allowed",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px"
-          }}
-        >
-          <svg width={isNarrowScreen ? 26 : 20} height={isNarrowScreen ? 26 : 20} viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M21 12a9 9 0 1 1-3.2-6.88"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              fill="none"
-            />
-            <path d="M21 3v6h-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </svg>
-          {!isNarrowScreen && <span>回転</span>}
-        </button>
-        <button
-          type="button"
-          onClick={deleteSelected}
-          disabled={!isShapeSelected}
-          aria-label="選択中の形を削除"
-          title="削除"
-          style={{
-            border: "1px solid #c6cce0",
-            background: isShapeSelected ? "#ffe3e6" : "#f2f4fb",
-            color: isShapeSelected ? "#a52033" : "#a3a9bf",
-            borderRadius: "10px",
-            padding: isNarrowScreen ? "12px 14px" : "8px 10px",
-            fontWeight: 700,
-            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
-            cursor: isShapeSelected ? "pointer" : "not-allowed",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px"
-          }}
-        >
-          <svg width={isNarrowScreen ? 26 : 20} height={isNarrowScreen ? 26 : 20} viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M4 7h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-            <path d="M10 7V4h4v3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <path
-              d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-            <path d="M10 11v7M14 11v7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-          {!isNarrowScreen && <span>削除</span>}
-        </button>
-        <button
-          type="button"
-          onClick={clearScreen}
-          style={{
-            border: "1px solid #c6cce0",
-            background: "#ffffff",
-            color: "#36405f",
-            borderRadius: "10px",
-            padding: isNarrowScreen ? "12px 14px" : "10px 12px",
-            fontWeight: 700,
-            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
-            cursor: "pointer"
-          }}
-        >
-          画面をクリア
-        </button>
-      </div>
       <p
         style={{
           margin: 0,
@@ -1772,6 +1597,166 @@ export default function ShapeStage({ mode, onQuizComplete }: ShapeStageProps) {
             </Layer>
           </Stage>
         </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          columnGap: isNarrowScreen ? "6px" : "10px",
+          rowGap: "8px",
+          padding: isNarrowScreen ? "8px" : "10px",
+          borderRadius: "12px",
+          background: "#f4f6ff"
+        }}
+      >
+        {paletteShapesForCurrentMode.map((type) => {
+          const isActiveForChange = isShapeSelected && selectedShapeData?.type === type;
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => {
+                if (applyTypeToSelected(type)) return;
+                const colorToUse =
+                  selectedColor ?? COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+                addShape(type, colorToUse);
+                flashRecentlyAddedShape(type);
+              }}
+              aria-label={isShapeSelected ? `選択中の形を ${type} に変更` : `${type} を追加`}
+              style={{
+                border: isActiveForChange
+                  ? "2px solid #3853ff"
+                  : recentlyAddedShape === type && !isShapeSelected
+                  ? "2px solid #5470ff"
+                  : "1px solid #c6cce0",
+                background: "#ffffff",
+                borderRadius: "12px",
+                padding: isNarrowScreen ? "8px" : "10px",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: isNarrowScreen ? "54px" : "48px",
+                height: isNarrowScreen ? "54px" : "48px"
+              }}
+            >
+              {renderPaletteShape(type)}
+            </button>
+          );
+        })}
+        {isNarrowScreen && (
+          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
+        )}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: isNarrowScreen ? "4px" : "8px",
+            marginLeft: isNarrowScreen ? "0" : "4px",
+            flexWrap: "wrap"
+          }}
+        >
+          {COLOR_OPTIONS.map((color) => {
+            const isActiveForChange = isShapeSelected && selectedShapeData?.color === color;
+            return (
+              <button
+                key={color}
+                type="button"
+                onClick={() => {
+                  if (applyColorToSelected(color)) return;
+                  setSelectedColor((current) => (current === color ? null : color));
+                }}
+                aria-label={isShapeSelected ? `選択中の形の色を変更` : `色 ${color} を選択`}
+                style={{
+                  width: isNarrowScreen ? "38px" : "28px",
+                  height: isNarrowScreen ? "38px" : "28px",
+                  borderRadius: "999px",
+                  border: isActiveForChange
+                    ? "3px solid #3853ff"
+                    : selectedColor === color && !isShapeSelected
+                    ? "3px solid #1f2b52"
+                    : "1px solid #8a93b2",
+                  background: color,
+                  cursor: "pointer",
+                  boxSizing: "border-box",
+                  padding: 0
+                }}
+              />
+            );
+          })}
+        </div>
+        {isNarrowScreen && (
+          <div aria-hidden style={{ flexBasis: "100%", height: 0 }} />
+        )}
+        <button
+          type="button"
+          onClick={deleteSelected}
+          disabled={!isShapeSelected}
+          aria-label="選択中の形を削除"
+          title="削除"
+          style={{
+            border: "1px solid #c6cce0",
+            background: isShapeSelected ? "#ffe3e6" : "#f2f4fb",
+            color: isShapeSelected ? "#a52033" : "#a3a9bf",
+            borderRadius: "10px",
+            padding: isNarrowScreen ? "12px 14px" : "8px 10px",
+            fontWeight: 700,
+            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
+            cursor: isShapeSelected ? "pointer" : "not-allowed",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px"
+          }}
+        >
+          <svg width={isNarrowScreen ? 26 : 20} height={isNarrowScreen ? 26 : 20} viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M4 7h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            <path d="M10 7V4h4v3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <path
+              d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <path d="M10 11v7M14 11v7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          {!isNarrowScreen && <span>削除</span>}
+        </button>
+        <button
+          type="button"
+          onClick={rotateSelected}
+          disabled={!isShapeSelected}
+          aria-label="選択中の形を回転"
+          title="回転"
+          style={{
+            border: "1px solid #c6cce0",
+            background: isShapeSelected ? "#e8efff" : "#f2f4fb",
+            color: isShapeSelected ? "#1f2b52" : "#a3a9bf",
+            borderRadius: "10px",
+            padding: isNarrowScreen ? "12px 14px" : "8px 10px",
+            fontWeight: 700,
+            fontSize: isNarrowScreen ? "0.9rem" : "0.95rem",
+            cursor: isShapeSelected ? "pointer" : "not-allowed",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px"
+          }}
+        >
+          <svg width={isNarrowScreen ? 26 : 20} height={isNarrowScreen ? 26 : 20} viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M21 12a9 9 0 1 1-3.2-6.88"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <path d="M21 3v6h-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+          {!isNarrowScreen && <span>回転</span>}
+        </button>
       </div>
     </div>
   );

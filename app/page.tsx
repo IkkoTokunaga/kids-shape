@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import ShapeStageClient from "./shape-stage-client";
 
 type QuizDifficulty = "easy" | "medium" | "hard" | "oni";
@@ -9,6 +9,14 @@ type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni"
 export default function HomePage() {
   const [selectedMode, setSelectedMode] = useState<StageMode | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<QuizDifficulty>("easy");
+  const [questionProgress, setQuestionProgress] = useState({ current: 0, total: 0 });
+  const [clearRequestKey, setClearRequestKey] = useState(0);
+  const handleQuestionProgressChange = useCallback((current: number, total: number) => {
+    setQuestionProgress((prev) => {
+      if (prev.current === current && prev.total === total) return prev;
+      return { current, total };
+    });
+  }, []);
   const handleQuizComplete = () => {
     if (selectedMode === "free") return;
     if (selectedDifficulty === "oni") {
@@ -78,6 +86,7 @@ export default function HomePage() {
                 onClick={() => {
                   setSelectedDifficulty("easy");
                   setSelectedMode("quiz-easy");
+                  setQuestionProgress({ current: 1, total: 5 });
                 }}
                 style={{
                   border: "1px solid #c6cce0",
@@ -98,26 +107,38 @@ export default function HomePage() {
           </div>
         ) : (
           <div style={{ display: "grid", gap: "12px" }}>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedMode(null);
-                setSelectedDifficulty("easy");
-              }}
+            <div
               style={{
-                width: "fit-content",
-                border: "1px solid #c6cce0",
-                background: "#ffffff",
-                borderRadius: "10px",
-                padding: "8px 12px",
-                cursor: "pointer"
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "8px",
+                padding: "10px",
+                borderRadius: "12px",
+                background: "#f4f6ff"
               }}
             >
-              ← TOPに戻る
-            </button>
-            {selectedMode !== "free" && (
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {(["easy", "medium", "hard", "oni"] as const).map((difficulty) => {
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedMode(null);
+                  setSelectedDifficulty("easy");
+                  setQuestionProgress({ current: 0, total: 0 });
+                }}
+                style={{
+                  width: "fit-content",
+                  border: "1px solid #c6cce0",
+                  background: "#ffffff",
+                  borderRadius: "10px",
+                  padding: "8px 12px",
+                  cursor: "pointer",
+                  fontWeight: 700
+                }}
+              >
+                ← TOPに戻る
+              </button>
+              {selectedMode !== "free" &&
+                (["easy", "medium", "hard", "oni"] as const).map((difficulty) => {
                   const isOni = difficulty === "oni";
                   const isSelected = selectedDifficulty === difficulty;
                   return (
@@ -127,6 +148,7 @@ export default function HomePage() {
                       onClick={() => {
                         setSelectedDifficulty(difficulty);
                         setSelectedMode(`quiz-${difficulty}`);
+                        setQuestionProgress({ current: 1, total: 5 });
                       }}
                       style={{
                         border: isSelected
@@ -158,12 +180,44 @@ export default function HomePage() {
                     </button>
                   );
                 })}
-              </div>
-            )}
+              {selectedMode !== "free" && (
+                <span
+                  style={{
+                    marginLeft: "4px",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid #c6cce0",
+                    background: "#ffffff",
+                    fontWeight: 700,
+                    color: "#44506b"
+                  }}
+                >
+                  {`第${questionProgress.current}/${questionProgress.total}問`}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setClearRequestKey((current) => current + 1)}
+                style={{
+                  marginLeft: "auto",
+                  border: "1px solid #c6cce0",
+                  background: "#ffffff",
+                  color: "#36405f",
+                  borderRadius: "10px",
+                  padding: "8px 12px",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                リセット
+              </button>
+            </div>
             <ShapeStageClient
               key={`${selectedMode}-${selectedDifficulty}`}
               mode={selectedMode}
               onQuizComplete={handleQuizComplete}
+              onQuestionProgressChange={handleQuestionProgressChange}
+              clearRequestKey={clearRequestKey}
             />
           </div>
         )}
