@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Konva from "konva";
-import { Layer, Stage, Circle, Rect, RegularPolygon, Line, Path } from "react-konva";
+import { Layer, Stage, Circle, Rect, RegularPolygon, Line, Path, Group, Ellipse, Arc } from "react-konva";
 
 type ShapeType = "circle" | "square" | "triangle" | "heart" | "star" | "rectangle";
 type StageMode = "free" | "quiz-easy" | "quiz-medium" | "quiz-hard" | "quiz-oni";
@@ -875,7 +875,7 @@ export default function ShapeStage({
     playSnapSynth();
   }, [playSnapSynth]);
 
-  const animateDragging = (target: Konva.Shape, active: boolean) => {
+  const animateDragging = (target: Konva.Node, active: boolean) => {
     if (active) {
       // Prime / resume audio on user gesture to remove first-play latency.
       void getOrCreateAudio().catch(() => undefined);
@@ -945,6 +945,142 @@ export default function ShapeStage({
   };
 
   const paletteIconSize = isNarrowScreen ? 32 : 24;
+
+  const renderShapeFace = (shape: ShapeItem, isSmiling: boolean) => {
+    const faceColor = "#2a2f45";
+
+    if (shape.type === "circle") {
+      return (
+        <>
+          <Circle x={-18} y={-12} radius={6} fill={faceColor} listening={false} />
+          <Circle x={18} y={-12} radius={6} fill={faceColor} listening={false} />
+          {isSmiling ? (
+            <Arc
+              x={0}
+              y={12}
+              innerRadius={0}
+              outerRadius={18}
+              angle={120}
+              rotation={30}
+              stroke={faceColor}
+              strokeWidth={4}
+              listening={false}
+            />
+          ) : (
+            <Line points={[-18, 14, 18, 14]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
+          )}
+        </>
+      );
+    }
+
+    if (shape.type === "square") {
+      return (
+        <Group rotation={-shape.rotation} listening={false}>
+          <Rect x={-24} y={-16} width={10} height={10} cornerRadius={2} fill={faceColor} listening={false} />
+          <Rect x={14} y={-16} width={10} height={10} cornerRadius={2} fill={faceColor} listening={false} />
+          {isSmiling ? (
+            <Line points={[-20, 16, 0, 24, 20, 16]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
+          ) : (
+            <Line points={[-20, 18, 20, 18]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
+          )}
+        </Group>
+      );
+    }
+
+    if (shape.type === "triangle") {
+      return (
+        <>
+          <Circle x={-16} y={-6} radius={5} fill={faceColor} listening={false} />
+          <Circle x={16} y={-6} radius={5} fill={faceColor} listening={false} />
+          {isSmiling ? (
+            <Arc
+              x={0}
+              y={14}
+              innerRadius={0}
+              outerRadius={14}
+              angle={90}
+              rotation={45}
+              stroke={faceColor}
+              strokeWidth={4}
+              listening={false}
+            />
+          ) : (
+            <Line points={[-12, 16, 12, 16]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
+          )}
+        </>
+      );
+    }
+
+    if (shape.type === "heart") {
+      return (
+        <>
+          <Ellipse x={-14} y={-10} radiusX={4} radiusY={6} fill={faceColor} listening={false} />
+          <Ellipse x={14} y={-10} radiusX={4} radiusY={6} fill={faceColor} listening={false} />
+          {isSmiling ? (
+            <Arc
+              x={0}
+              y={18}
+              innerRadius={0}
+              outerRadius={12}
+              angle={120}
+              rotation={30}
+              stroke={faceColor}
+              strokeWidth={4}
+              listening={false}
+            />
+          ) : (
+            <Line points={[-12, 19, 12, 19]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
+          )}
+        </>
+      );
+    }
+
+    if (shape.type === "star") {
+      return (
+        <>
+          <Circle x={-18} y={-8} radius={5} fill={faceColor} listening={false} />
+          <Circle x={18} y={-8} radius={5} fill={faceColor} listening={false} />
+          {isSmiling ? (
+            <Arc
+              x={0}
+              y={12}
+              innerRadius={0}
+              outerRadius={12}
+              angle={120}
+              rotation={30}
+              stroke={faceColor}
+              strokeWidth={4}
+              listening={false}
+            />
+          ) : (
+            <Line points={[-16, 16, 16, 16]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
+          )}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Rect x={-22} y={-10} width={8} height={8} cornerRadius={2} fill={faceColor} listening={false} />
+        <Rect x={14} y={-10} width={8} height={8} cornerRadius={2} fill={faceColor} listening={false} />
+        {isSmiling ? (
+          <Arc
+            x={0}
+            y={12}
+            innerRadius={0}
+            outerRadius={12}
+            angle={140}
+            rotation={20}
+            stroke={faceColor}
+            strokeWidth={4}
+            listening={false}
+          />
+        ) : (
+          <Line points={[-12, 14, 12, 14]} stroke={faceColor} strokeWidth={4} lineCap="round" listening={false} />
+        )}
+      </>
+    );
+  };
 
   const renderPaletteShape = (type: ShapeType) => {
     const color = SHAPE_COLORS[type];
@@ -1383,11 +1519,7 @@ export default function ShapeStage({
             const shapeOpacity = 1;
             // くぼみにはまっている形はドラッグで動かせないようにする（ロック済みの形も同様）。
             const isDraggable = !shape.isLocked && !isShapeInSlot(shape);
-            const scaleProps = {
-              scaleX: shapeScale,
-              scaleY: shapeScale,
-              strokeScaleEnabled: false
-            };
+            const isSmiling = isShapeInSlot(shape);
             const selectionShadow = isSelected
               ? {
                   shadowColor: "#3853ff",
@@ -1397,201 +1529,130 @@ export default function ShapeStage({
                   shadowOffsetY: 0
                 }
               : {};
+            const commonGroupProps = {
+              x: shape.x,
+              y: shape.y,
+              rotation: shape.rotation,
+              scaleX: shapeScale,
+              scaleY: shapeScale,
+              draggable: isDraggable,
+              dragBoundFunc: (pos: { x: number; y: number }) => getDragBoundPosition(shape, pos),
+              onDragStart: (e: Konva.KonvaEventObject<DragEvent>) => {
+                setSelectedShapeId(null);
+                animateDragging(e.target, true);
+              },
+              onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+                animateDragging(e.target, false);
+                handleDragEndById(shape.id, e.target.x(), e.target.y());
+              },
+              onClick: () => handleShapeTap(shape.id),
+              onTap: () => handleShapeTap(shape.id)
+            };
             if (shape.type === "circle") {
               return (
-                <Circle
-                  key={shape.id}
-                  x={shape.x}
-                  y={shape.y}
-                  radius={60}
-                  rotation={shape.rotation}
-                  fill={shape.color}
-                  stroke={shapeStroke}
-                  strokeWidth={shapeStrokeWidth}
-                  opacity={shapeOpacity}
-                  {...scaleProps}
-                  {...selectionShadow}
-                  draggable={isDraggable}
-                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
-                  onDragStart={(e) => {
-                    setSelectedShapeId(null);
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
-                  }}
-                  onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) {
-                      animateDragging(e.target, false);
-                      handleDragEndById(shape.id, e.target.x(), e.target.y());
-                    }
-                  }}
-                  onClick={() => handleShapeTap(shape.id)}
-                  onTap={() => handleShapeTap(shape.id)}
-                />
+                <Group key={shape.id} {...commonGroupProps}>
+                  <Circle
+                    radius={60}
+                    fill={shape.color}
+                    stroke={shapeStroke}
+                    strokeWidth={shapeStrokeWidth}
+                    opacity={shapeOpacity}
+                    strokeScaleEnabled={false}
+                    {...selectionShadow}
+                  />
+                  {renderShapeFace(shape, isSmiling)}
+                </Group>
               );
             }
 
             if (shape.type === "square") {
               return (
-                <Rect
-                  key={shape.id}
-                  x={shape.x}
-                  y={shape.y}
-                  width={120}
-                  height={120}
-                  offsetX={60}
-                  offsetY={60}
-                  rotation={shape.rotation}
-                  cornerRadius={10}
-                  fill={shape.color}
-                  stroke={shapeStroke}
-                  strokeWidth={shapeStrokeWidth}
-                  opacity={shapeOpacity}
-                  {...scaleProps}
-                  {...selectionShadow}
-                  draggable={isDraggable}
-                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
-                  onDragStart={(e) => {
-                    setSelectedShapeId(null);
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
-                  }}
-                  onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) {
-                      animateDragging(e.target, false);
-                      handleDragEndById(shape.id, e.target.x(), e.target.y());
-                    }
-                  }}
-                  onClick={() => handleShapeTap(shape.id)}
-                  onTap={() => handleShapeTap(shape.id)}
-                />
+                <Group key={shape.id} {...commonGroupProps}>
+                  <Rect
+                    x={-60}
+                    y={-60}
+                    width={120}
+                    height={120}
+                    cornerRadius={10}
+                    fill={shape.color}
+                    stroke={shapeStroke}
+                    strokeWidth={shapeStrokeWidth}
+                    opacity={shapeOpacity}
+                    strokeScaleEnabled={false}
+                    {...selectionShadow}
+                  />
+                  {renderShapeFace(shape, isSmiling)}
+                </Group>
               );
             }
 
             if (shape.type === "heart") {
               return (
-                <Path
-                  key={shape.id}
-                  x={shape.x}
-                  y={shape.y}
-                  data={HEART_PATH_DATA}
-                  rotation={shape.rotation}
-                  fill={shape.color}
-                  stroke={shapeStroke}
-                  strokeWidth={shapeStrokeWidth}
-                  opacity={shapeOpacity}
-                  {...scaleProps}
-                  {...selectionShadow}
-                  draggable={isDraggable}
-                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
-                  onDragStart={(e) => {
-                    setSelectedShapeId(null);
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
-                  }}
-                  onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) {
-                      animateDragging(e.target, false);
-                      handleDragEndById(shape.id, e.target.x(), e.target.y());
-                    }
-                  }}
-                  onClick={() => handleShapeTap(shape.id)}
-                  onTap={() => handleShapeTap(shape.id)}
-                />
+                <Group key={shape.id} {...commonGroupProps}>
+                  <Path
+                    data={HEART_PATH_DATA}
+                    fill={shape.color}
+                    stroke={shapeStroke}
+                    strokeWidth={shapeStrokeWidth}
+                    opacity={shapeOpacity}
+                    strokeScaleEnabled={false}
+                    {...selectionShadow}
+                  />
+                  {renderShapeFace(shape, isSmiling)}
+                </Group>
               );
             }
 
             if (shape.type === "star") {
               return (
-                <Line
-                  key={shape.id}
-                  x={shape.x}
-                  y={shape.y}
-                  points={STAR_POINTS.flat()}
-                  rotation={shape.rotation}
-                  fill={shape.color}
-                  closed
-                  stroke={shapeStroke}
-                  strokeWidth={shapeStrokeWidth}
-                  opacity={shapeOpacity}
-                  {...scaleProps}
-                  {...selectionShadow}
-                  draggable={isDraggable}
-                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
-                  onDragStart={(e) => {
-                    setSelectedShapeId(null);
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
-                  }}
-                  onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) {
-                      animateDragging(e.target, false);
-                      handleDragEndById(shape.id, e.target.x(), e.target.y());
-                    }
-                  }}
-                  onClick={() => handleShapeTap(shape.id)}
-                  onTap={() => handleShapeTap(shape.id)}
-                />
+                <Group key={shape.id} {...commonGroupProps}>
+                  <Line
+                    points={STAR_POINTS.flat()}
+                    fill={shape.color}
+                    closed
+                    stroke={shapeStroke}
+                    strokeWidth={shapeStrokeWidth}
+                    opacity={shapeOpacity}
+                    strokeScaleEnabled={false}
+                    {...selectionShadow}
+                  />
+                  {renderShapeFace(shape, isSmiling)}
+                </Group>
               );
             }
 
             if (shape.type === "rectangle") {
               return (
-                <Line
-                  key={shape.id}
-                  x={shape.x}
-                  y={shape.y}
-                  points={RECTANGLE_POINTS.flat()}
-                  rotation={shape.rotation}
-                  fill={shape.color}
-                  closed
-                  stroke={shapeStroke}
-                  strokeWidth={shapeStrokeWidth}
-                  opacity={shapeOpacity}
-                  {...scaleProps}
-                  {...selectionShadow}
-                  draggable={isDraggable}
-                  dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
-                  onDragStart={(e) => {
-                    setSelectedShapeId(null);
-                    if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
-                  }}
-                  onDragEnd={(e) => {
-                    if (e.target instanceof Konva.Shape) {
-                      animateDragging(e.target, false);
-                      handleDragEndById(shape.id, e.target.x(), e.target.y());
-                    }
-                  }}
-                  onClick={() => handleShapeTap(shape.id)}
-                  onTap={() => handleShapeTap(shape.id)}
-                />
+                <Group key={shape.id} {...commonGroupProps}>
+                  <Line
+                    points={RECTANGLE_POINTS.flat()}
+                    fill={shape.color}
+                    closed
+                    stroke={shapeStroke}
+                    strokeWidth={shapeStrokeWidth}
+                    opacity={shapeOpacity}
+                    strokeScaleEnabled={false}
+                    {...selectionShadow}
+                  />
+                  {renderShapeFace(shape, isSmiling)}
+                </Group>
               );
             }
 
             return (
-              <RegularPolygon
-                key={shape.id}
-                x={shape.x}
-                y={shape.y}
-                sides={3}
-                radius={75}
-                rotation={shape.rotation}
-                fill={shape.color}
-                stroke={shapeStroke}
-                strokeWidth={shapeStrokeWidth}
-                opacity={shapeOpacity}
-                {...scaleProps}
-                {...selectionShadow}
-                draggable={isDraggable}
-                dragBoundFunc={(pos) => getDragBoundPosition(shape, pos)}
-                onDragStart={(e) => {
-                  setSelectedShapeId(null);
-                  if (e.target instanceof Konva.Shape) animateDragging(e.target, true);
-                }}
-                onDragEnd={(e) => {
-                  if (e.target instanceof Konva.Shape) {
-                    animateDragging(e.target, false);
-                    handleDragEndById(shape.id, e.target.x(), e.target.y());
-                  }
-                }}
-                onClick={() => handleShapeTap(shape.id)}
-                onTap={() => handleShapeTap(shape.id)}
-              />
+              <Group key={shape.id} {...commonGroupProps}>
+                <RegularPolygon
+                  sides={3}
+                  radius={75}
+                  fill={shape.color}
+                  stroke={shapeStroke}
+                  strokeWidth={shapeStrokeWidth}
+                  opacity={shapeOpacity}
+                  strokeScaleEnabled={false}
+                  {...selectionShadow}
+                />
+                {renderShapeFace(shape, isSmiling)}
+              </Group>
             );
                 })}
             </Layer>
