@@ -143,7 +143,7 @@ export default function HomePage() {
                   width={180}
                   height={98}
                   priority
-                  style={{ width: "clamp(96px, 28vw, 180px)", height: "auto" }}
+                  style={{ width: "clamp(84px, 24vw, 160px)", height: "auto" }}
                 />
               </button>
               {selectedMode !== "free" &&
