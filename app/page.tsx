@@ -32,10 +32,6 @@ export default function HomePage() {
           boxSizing: "border-box"
         }}
       >
-        <h1 style={{ margin: "0 0 16px", fontSize: "1.25rem" }}>
-          Shape Playground
-        </h1>
-
         {!selectedMode ? (
           <div style={{ display: "grid", gap: "12px" }}>
             <p style={{ margin: 0, color: "#44506b", fontWeight: 700 }}>
