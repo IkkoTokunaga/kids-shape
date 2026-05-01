@@ -7,7 +7,7 @@ const siteUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "かたち | Kids Shape",
+  title: "かたち・あそび",
   description:
     "やわらかい色の図形をはめるパズル。自由に遊ぶモードと、やさしい順から鬼までの問題モードがあります。",
   icons: {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     apple: "/icon.svg"
   },
   openGraph: {
-    title: "かたち | Kids Shape",
+    title: "かたち・あそび",
     description:
       "やわらかい色の図形をはめるパズル。自由に遊ぶモードと、やさしい順から鬼までの問題モードがあります。",
     type: "website",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "かたち | Kids Shape",
+    title: "かたち・あそび",
     description:
       "やわらかい色の図形をはめるパズル。自由に遊ぶモードと、やさしい順から鬼までの問題モードがあります。",
     images: ["/og.png"]
