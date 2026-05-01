@@ -1,13 +1,41 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
-  title: "Kids Shape",
-  description: "Draggable pastel shapes with react-konva",
+  metadataBase: new URL(siteUrl),
+  title: "かたち | Kids Shape",
+  description:
+    "やわらかい色の図形をはめるパズル。自由に遊ぶモードと、やさしい順から鬼までの問題モードがあります。",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
     apple: "/icon.svg"
+  },
+  openGraph: {
+    title: "かたち | Kids Shape",
+    description:
+      "やわらかい色の図形をはめるパズル。自由に遊ぶモードと、やさしい順から鬼までの問題モードがあります。",
+    type: "website",
+    locale: "ja_JP",
+    images: [
+      {
+        url: "/og.png",
+        width: 444,
+        height: 237,
+        alt: "かたち：パステルカラーの図形が並んだイメージ"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "かたち | Kids Shape",
+    description:
+      "やわらかい色の図形をはめるパズル。自由に遊ぶモードと、やさしい順から鬼までの問題モードがあります。",
+    images: ["/og.png"]
   }
 };
 
