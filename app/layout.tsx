@@ -24,8 +24,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/og.png",
-        width: 444,
-        height: 237,
+        width: 391,
+        height: 412,
         alt: "かたち：パステルカラーの図形が並んだイメージ"
       }
     ]
